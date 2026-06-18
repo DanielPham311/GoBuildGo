@@ -664,7 +664,7 @@ Upsert into prices table
 Client (Zustand state)
   │
   ▼
-POST /api/setups
+POST /api/v1/setups
 Body: { name, slug, roomType, roomDimensions, theme, isPublic, items: [...] }
   │
   ▼
@@ -686,7 +686,7 @@ Return setup with items + component details
 
 **Load flow:**
 ```
-GET /api/setups/:slug
+GET /api/v1/setups/:slug
   │
   ▼
 SELECT setups.*
@@ -712,7 +712,7 @@ Return full setup with items, components, and prices
 User clicks "Buy on Shopee" button
   │
   ▼
-POST /api/affiliate/click
+POST /api/v1/affiliate/click
 Body: { componentId, setupId, shop }
   │
   ▼
