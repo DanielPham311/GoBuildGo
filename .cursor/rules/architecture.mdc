@@ -1,0 +1,27 @@
+---
+description: Module layout, folder responsibilities, and import boundaries
+alwaysApply: true
+---
+
+# Project architecture
+
+## Directory roles
+
+- **`modules/<name>/`** — Domain logic per feature: `schema.ts` (Zod validation), `service.ts` (Prisma-backed queries/mutations), `public.ts` (API-safe DTO mappers, e.g. `toPublicComponent`). New features add or extend a module here first.
+- **`app/`** — Next.js App Router: pages, layouts, route-local `_components` / `_lib`, and **`app/api/**`** HTTP handlers only. API is versioned under `app/api/v1/...`.
+- **`shared/`** — Cross-cutting infrastructure: `auth`, `db` (Prisma client), `audit-log`, `api` (response/error envelope), `integrations` (R2, S3, Resend, Redis, Anthropic). No feature-specific business rules that belong in `modules/`.
+- **`components/ui/`** — Shared primitives (shadcn/Radix-style). Prefer these over ad-hoc styled elements.
+- **`components/shared/`** — Reusable app chrome (header, footer, theme toggle, etc.).
+- **`lib/`** — Generic, dependency-free utilities (`cn`, `formatCurrency`, `slugify`) and app constants.
+
+## Boundaries
+
+- **`app/api/*` route handlers stay thin:** authenticate/authorize (`@/shared/auth`), validate input with the module's Zod `schema`, call `@/modules/<name>` services, map responses with `public.ts` DTO helpers, write audit logs when mutating sensitive data (`@/shared/audit-log`).
+- **Do not** put heavy DB logic directly in page components; call services from server-side code (route handlers, Server Components, or server actions).
+- Use the **`@/*`** path alias (project root) for imports, matching `tsconfig.json` `paths`.
+- Data layer is **Prisma + PostgreSQL** (`prisma/schema.prisma`). Note: this differs from `docs/PROJECT_STRUCTURE.md`, which described a `src/`-based layout — this root-level `modules/` + `shared/` structure supersedes it.
+
+## New modules
+
+- Prefer **`modules/<feature>/`** with `schema.ts`, `service.ts`, and `public.ts` for API-safe shapes, plus an `index.ts` barrel.
+- Register related API routes under **`app/api/v1/...`** and UI under **`app/...`** as appropriate.

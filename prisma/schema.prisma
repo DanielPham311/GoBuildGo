@@ -1,0 +1,288 @@
+// gobuildgo — Prisma schema
+// Canonical reference: docs/database-design.md §7
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ComponentCategory {
+  desk
+  chair
+  monitor
+  keyboard
+  mouse
+  lighting
+  decor
+  audio
+  accessory
+}
+
+enum Shop {
+  shopee
+  lazada
+  tiki
+  phongvu
+  gearvn
+  nhaxinh
+}
+
+enum RoomType {
+  bedroom
+  gaming_room
+  office
+  studio
+}
+
+enum Condition {
+  new
+  used
+}
+
+enum SubscriptionType {
+  price_alert
+  weekly_digest
+  promotions
+}
+
+model User {
+  id             String    @id @default(cuid())
+  email          String?   @unique
+  name           String?
+  image          String?
+  emailVerified  DateTime?
+  authProvider   String    @default("google")
+
+  setups          Setup[]
+  affiliateClicks AffiliateClick[]
+  favorites       UserFavorite[]
+  setupLikes      SetupLike[]
+  setupViews      SetupView[]
+  subscriptions   EmailSubscription[]
+
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@map("users")
+}
+
+model Component {
+  id          String            @id @default(cuid())
+  category    ComponentCategory
+  brand       String
+  name        String
+  slug        String            @unique
+  description String?           @db.Text
+  specs       Json              @default("{}")
+  colors      String[]          @default([])
+  styleTags   String[]          @default([])
+  imageUrl    String?
+  dimensions  Json?
+  isActive    Boolean           @default(true)
+
+  prices          Price[]
+  setupItems      SetupItem[]
+  themeComponents ThemeComponent[]
+  affiliateClicks AffiliateClick[]
+  favorites       UserFavorite[]
+
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  @@index([category, isActive])
+  @@index([brand])
+  @@index([styleTags], type: Gin)
+  @@index([colors], type: Gin)
+  @@index([specs], type: Gin)
+  @@index([dimensions], type: Gin)
+  @@map("components")
+}
+
+model Price {
+  id            String    @id @default(cuid())
+  componentId   String
+  component     Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  shop          Shop
+  price         Decimal   @db.Decimal(12, 0)
+  originalPrice Decimal?  @db.Decimal(12, 0)
+  currency      String    @default("VND")
+  url           String
+  shopName      String?
+  shopRating    Decimal?  @db.Decimal(2, 1)
+  condition     Condition @default(new)
+  isAvailable   Boolean   @default(true)
+  lastUpdated   DateTime  @updatedAt
+
+  priceHistories PriceHistory[]
+
+  createdAt     DateTime  @default(now())
+
+  @@index([componentId, price])
+  @@index([componentId, shop, condition])
+  @@index([shop, isAvailable])
+  @@map("prices")
+}
+
+model PriceHistory {
+  id          String   @id @default(cuid())
+  priceId     String
+  price       Price    @relation(fields: [priceId], references: [id], onDelete: Cascade)
+  oldPrice    Decimal  @db.Decimal(12, 0)
+  newPrice    Decimal  @db.Decimal(12, 0)
+  recordedAt  DateTime @default(now())
+
+  @@index([priceId, recordedAt(sort: Desc)])
+  @@map("price_history")
+}
+
+model Setup {
+  id              String    @id @default(cuid())
+  userId          String?
+  user            User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  name            String
+  slug            String    @unique
+  roomType        RoomType?
+  roomDimensions  Json?
+  theme           String?
+  isPublic        Boolean   @default(false)
+  totalPrice      Decimal?  @db.Decimal(12, 0)
+  coverImageUrl   String?
+  viewCount       Int       @default(0)
+
+  items           SetupItem[]
+  affiliateClicks AffiliateClick[]
+  likes           SetupLike[]
+  views           SetupView[]
+
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([isPublic, createdAt(sort: Desc)])
+  @@index([isPublic, viewCount(sort: Desc)])
+  @@index([theme, isPublic])
+  @@index([roomDimensions], type: Gin)
+  @@map("setups")
+}
+
+model SetupItem {
+  id          String    @id @default(cuid())
+  setupId     String
+  setup       Setup     @relation(fields: [setupId], references: [id], onDelete: Cascade)
+  componentId String
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Restrict)
+  quantity    Int       @default(1)
+  position    Json?
+  sortOrder   Int       @default(0)
+
+  @@index([setupId])
+  @@index([componentId])
+  @@index([position], type: Gin)
+  @@map("setup_items")
+}
+
+model Theme {
+  id            String   @id @default(cuid())
+  name          String
+  slug          String   @unique
+  description   String?  @db.Text
+  coverImageUrl String?
+  colorPalette  String[] @default([])
+  styleTags     String[] @default([])
+  isFeatured    Boolean  @default(false)
+
+  components    ThemeComponent[]
+
+  createdAt     DateTime @default(now())
+
+  @@index([styleTags], type: Gin)
+  @@index([colorPalette], type: Gin)
+  @@map("themes")
+}
+
+model ThemeComponent {
+  themeId     String
+  theme       Theme     @relation(fields: [themeId], references: [id], onDelete: Cascade)
+  componentId String
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  sortOrder   Int       @default(0)
+
+  @@id([themeId, componentId])
+  @@map("themes_components")
+}
+
+model AffiliateClick {
+  id          String    @id @default(cuid())
+  componentId String
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  setupId     String?
+  setup       Setup?    @relation(fields: [setupId], references: [id], onDelete: SetNull)
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  shop        String
+  clickedAt   DateTime  @default(now())
+  referrer    String?
+  ipHash      String?
+
+  @@index([componentId, clickedAt(sort: Desc)])
+  @@index([shop, clickedAt(sort: Desc)])
+  @@index([setupId])
+  @@map("affiliate_clicks")
+}
+
+model UserFavorite {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  componentId String
+  component   Component @relation(fields: [componentId], references: [id], onDelete: Cascade)
+  createdAt   DateTime  @default(now())
+
+  @@unique([userId, componentId])
+  @@index([componentId])
+  @@map("user_favorites")
+}
+
+model SetupLike {
+  id        String   @id @default(cuid())
+  setupId   String
+  setup     Setup    @relation(fields: [setupId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([setupId, userId])
+  @@index([userId])
+  @@map("setup_likes")
+}
+
+model SetupView {
+  id        String   @id @default(cuid())
+  setupId   String
+  setup     Setup    @relation(fields: [setupId], references: [id], onDelete: Cascade)
+  viewerId  String?
+  viewer    User?    @relation(fields: [viewerId], references: [id], onDelete: SetNull)
+  ipHash    String
+  viewedAt  DateTime @default(now())
+
+  @@index([setupId, viewedAt(sort: Desc)])
+  @@map("setup_views")
+}
+
+model EmailSubscription {
+  id               String           @id @default(cuid())
+  userId           String
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionType SubscriptionType
+  isActive         Boolean          @default(true)
+
+  createdAt        DateTime         @default(now())
+
+  @@unique([userId, subscriptionType])
+  @@index([userId])
+  @@map("email_subscriptions")
+}
