@@ -9,18 +9,265 @@
 
 ## Table of Contents
 
-1. [Style Engine Architecture](#1-style-engine-architecture)
-2. [Price Scraping Pipeline](#2-price-scraping-pipeline)
-3. [Caching Architecture](#3-caching-architecture)
-4. [Affiliate Link System](#4-affiliate-link-system)
-5. [Error Handling Strategy](#5-error-handling-strategy)
-6. [Testing Strategy](#6-testing-strategy)
-7. [Performance Patterns](#7-performance-patterns)
-8. [Security Patterns](#8-security-patterns)
+1. [Auth Patterns](#1-auth-patterns)
+2. [Style Engine Architecture](#2-style-engine-architecture)
+3. [Price Scraping Pipeline](#3-price-scraping-pipeline)
+4. [Caching Architecture](#4-caching-architecture)
+5. [Affiliate Link System](#5-affiliate-link-system)
+6. [Error Handling Strategy](#6-error-handling-strategy)
+7. [Testing Strategy](#7-testing-strategy)
+8. [Performance Patterns](#8-performance-patterns)
+9. [Security Patterns](#9-security-patterns)
 
 ---
 
-## 1. Style Engine Architecture
+## 1. Auth Patterns
+
+### 1.1 NextAuth.js Configuration
+
+```typescript
+// src/lib/auth.ts
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import FacebookProvider from "next-auth/providers/facebook";
+import CredentialsProvider from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "./prisma";
+import bcrypt from "bcryptjs";
+
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+    FacebookProvider({
+      clientId: process.env.FACEBOOK_CLIENT_ID!,
+      clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
+    }),
+    CredentialsProvider({
+      name: "credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) return null;
+
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email as string },
+        });
+
+        if (!user || !user.password_hash) return null;
+
+        const valid = await bcrypt.compare(
+          credentials.password as string,
+          user.password_hash
+        );
+
+        if (!valid) return null;
+
+        // Check email verification
+        if (!user.email_verified) {
+          throw new Error("EMAIL_NOT_VERIFIED");
+        }
+
+        return { id: user.id, name: user.name, email: user.email, image: user.image };
+      },
+    }),
+  ],
+  session: { strategy: "jwt", maxAge: 30 * 24 * 60 * 60 },
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) token.id = user.id;
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) session.user.id = token.id as string;
+      return session;
+    },
+  },
+  pages: {
+    signIn: "/login",
+    error: "/login",
+  },
+});
+```
+
+### 1.2 Registration Flow
+
+```typescript
+// src/server/actions/auth.ts
+"use server";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
+import { sendVerificationEmail } from "@/lib/email";
+
+export async function register(data: {
+  name: string;
+  email: string;
+  password: string;
+}) {
+  // Check existing
+  const existing = await prisma.user.findUnique({
+    where: { email: data.email },
+  });
+  if (existing) throw new Error("EMAIL_EXISTS");
+
+  // Hash password (bcrypt, cost 12)
+  const password_hash = await bcrypt.hash(data.password, 12);
+
+  // Create user
+  const user = await prisma.user.create({
+    data: {
+      name: data.name,
+      email: data.email,
+      password_hash,
+      auth_provider: "credentials",
+    },
+  });
+
+  // Generate verification token
+  const token = crypto.randomUUID();
+  await prisma.verificationToken.create({
+    data: {
+      identifier: data.email,
+      token,
+      expires: new Date(Date.now() + 24 * 60 * 60 * 1000), // 24h
+    },
+  });
+
+  // Send verification email via Resend
+  await sendVerificationEmail(data.email, token);
+
+  return { id: user.id, name: user.name, email: user.email };
+}
+```
+
+### 1.3 Email Verification
+
+```typescript
+export async function verifyEmail(token: string) {
+  const verification = await prisma.verificationToken.findUnique({
+    where: { token },
+  });
+
+  if (!verification || verification.expires < new Date()) {
+    throw new Error("INVALID_TOKEN");
+  }
+
+  await prisma.user.update({
+    where: { email: verification.identifier },
+    data: { email_verified: new Date() },
+  });
+
+  await prisma.verificationToken.delete({ where: { token } });
+}
+```
+
+### 1.4 Password Reset Flow
+
+```typescript
+export async function forgotPassword(email: string) {
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) return; // Don't reveal if email exists
+
+  const token = crypto.randomUUID();
+  await prisma.verificationToken.create({
+    data: {
+      identifier: email,
+      token,
+      expires: new Date(Date.now() + 60 * 60 * 1000), // 1h
+    },
+  });
+
+  await sendPasswordResetEmail(email, token);
+}
+
+export async function resetPassword(token: string, newPassword: string) {
+  const verification = await prisma.verificationToken.findUnique({
+    where: { token },
+  });
+
+  if (!verification || verification.expires < new Date()) {
+    throw new Error("INVALID_TOKEN");
+  }
+
+  const password_hash = await bcrypt.hash(newPassword, 12);
+  await prisma.user.update({
+    where: { email: verification.identifier },
+    data: { password_hash },
+  });
+
+  await prisma.verificationToken.delete({ where: { token } });
+}
+```
+
+### 1.5 Email Templates (Resend)
+
+```typescript
+// src/lib/email.ts
+import { Resend } from "resend";
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL;
+const FROM = process.env.RESEND_FROM_EMAIL;
+
+export async function sendVerificationEmail(email: string, token: string) {
+  await resend.emails.send({
+    FROM,
+    to: email,
+    subject: "Verify your gobuildgo account",
+    html: `
+      <h1>Welcome to gobuildgo!</h1>
+      <p>Click the link below to verify your email:</p>
+      <a href="${APP_URL}/verify-email?token=${token}">Verify Email</a>
+      <p>This link expires in 24 hours.</p>
+    `,
+  });
+}
+
+export async function sendPasswordResetEmail(email: string, token: string) {
+  await resend.emails.send({
+    FROM,
+    to: email,
+    subject: "Reset your gobuildgo password",
+    html: `
+      <h1>Password Reset</h1>
+      <p>Click the link below to reset your password:</p>
+      <a href="${APP_URL}/reset-password?token=${token}">Reset Password</a>
+      <p>This link expires in 1 hour. If you didn't request this, ignore this email.</p>
+    `,
+  });
+}
+```
+
+### 1.6 Sign-In Rate Limiting
+
+```typescript
+// src/lib/rate-limit.ts — applied to credentials sign-in
+const signInAttempts = new Map<string, { count: number; resetAt: number }>();
+
+export function checkSignInRateLimit(identifier: string): boolean {
+  const now = Date.now();
+  const record = signInAttempts.get(identifier);
+
+  if (!record || now > record.resetAt) {
+    signInAttempts.set(identifier, { count: 1, resetAt: now + 15 * 60 * 1000 });
+    return true;
+  }
+
+  if (record.count >= 5) return false;
+
+  record.count++;
+  return true;
+}
+```
+
+---
+
+## 2. Style Engine Architecture
 
 The style engine evaluates a desk setup across four dimensions — color harmony, theme consistency, space fit, and budget balance — producing a weighted composite score with actionable suggestions and warnings.
 
@@ -2750,7 +2997,7 @@ import { z } from 'zod';
 const CreateComponentSchema = z.object({
   name: z.string().min(1).max(200),
   brand: z.string().min(1).max(100),
-  category: z.enum(['desk', 'chair', 'monitor', 'keyboard', 'mouse', 'lighting', 'decor', 'storage', 'other']),
+  category: z.enum(['desk', 'chair', 'monitor', 'keyboard', 'mouse', 'lighting', 'decor', 'audio', 'accessory']),
   description: z.string().max(2000).optional(),
   colors: z.array(z.object({
     h: z.number().min(0).max(360),

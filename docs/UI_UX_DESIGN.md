@@ -235,6 +235,7 @@
 **Hero**: "Curated Desk Setups for Every Style" + description text.
 
 **Grid** (2 columns desktop, 1 mobile):
+
 - **Theme Card** (large):
   - Cover image (full card background, gradient overlay)
   - Theme name (2xl, white, on image)
