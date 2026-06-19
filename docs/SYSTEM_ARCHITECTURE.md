@@ -193,13 +193,22 @@ search:{hash}                           — search results
 
 ```
 User clicks "Sign In"
-  → NextAuth.js redirects to Google/Facebook OAuth
-  → OAuth callback → NextAuth.js creates JWT session
+  → Chooses: OAuth (Google/Facebook) or Email/Password
+  → OAuth: NextAuth.js redirects to provider → callback → JWT session
+  → Credentials: NextAuth.js validates email + bcrypt password hash → JWT session
   → JWT stored in httpOnly cookie
   → Middleware validates JWT on protected routes
   → Server components read session via getServerSession()
   → API routes read session via getServerSession()
 ```
+
+**Providers:** `CredentialsProvider` (email/password), `GoogleProvider`, `FacebookProvider`.
+
+**Credentials flow extras:**
+- Email verification via Resend (token-based, 24h expiry)
+- Password reset via email (token-based, 1h expiry)
+- bcrypt cost factor: 12
+- Rate limit: 5 sign-in attempts per 15 min per IP
 
 Session strategy: JWT (stateless, works with serverless). Session lifetime: 30 days.
 

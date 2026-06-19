@@ -357,6 +357,7 @@ src/app/            ← imports: components, lib, stores, types
 | `AWS_ACCESS_KEY_ID` | Yes | AWS access key |
 | `AWS_SECRET_ACCESS_KEY` | Yes | AWS secret key |
 | `RESEND_API_KEY` | Yes | Resend email API key |
+| `RESEND_FROM_EMAIL` | Yes | Sender email (e.g., `noreply@gobuildgo.vn`) |
 | `ANTHROPIC_API_KEY` | Yes | Claude Vision API key |
 | `NEXT_PUBLIC_APP_URL` | Yes | Public app URL |
 | `NEXT_PUBLIC_GOOGLE_ANALYTICS_ID` | No | GA4 measurement ID |

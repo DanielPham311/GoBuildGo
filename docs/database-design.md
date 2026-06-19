@@ -145,7 +145,14 @@ erDiagram
         varchar user_id FK
         enum subscription_type
         boolean is_active
+        jsonb metadata
         timestamp created_at
+    }
+
+    verification_token {
+        varchar identifier PK,FK
+        varchar token PK
+        timestamp expires
     }
 
     %% Relationships
@@ -202,7 +209,7 @@ CREATE TYPE condition_enum AS ENUM (
 
 -- Email subscription types
 CREATE TYPE subscription_type_enum AS ENUM (
-  'price_alert', 'weekly_digest', 'promotions'
+  'price_alert', 'weekly_digest', 'promotions', 'new_setups'
 );
 ```
 
@@ -217,14 +224,19 @@ Stores authenticated user accounts via NextAuth (Google + Facebook).
 | `id` | `VARCHAR` | `PRIMARY KEY` | CUID v2 identifier |
 | `email` | `VARCHAR(255)` | `UNIQUE` | User email address |
 | `name` | `VARCHAR(255)` | `NULL` | Display name |
-| `image` `VARCHAR(500)` | `NULL` | Avatar URL |
+| `image` | `VARCHAR(500)` | `NULL` | Avatar URL |
+| `role` | `VARCHAR(20)` | `NOT NULL DEFAULT 'user'` | `'user'` or `'admin'` |
 | `email_verified` | `TIMESTAMPTZ` | `NULL` | When email was verified |
-| `auth_provider` | `VARCHAR(50)` | `NOT NULL` | `google` or `facebook` |
+| `auth_provider` | `VARCHAR(50)` | `NULL` | `google`, `facebook`, or `credentials` |
+| `password_hash` | `VARCHAR(255)` | `NULL` | bcrypt hash (null for OAuth-only accounts) |
+| `last_login_at` | `TIMESTAMPTZ` | `NULL` | Last sign-in time |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Account creation time |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Last profile update |
 
 **Notes:**
 - `email` is nullable because some OAuth providers may not return it.
+- `password_hash` is null for OAuth-only accounts (Google/Facebook). Required for `credentials` provider.
+- `auth_provider` is null until first sign-in (set on OAuth) or `credentials` for email/password.
 - On user deletion, email/name are anonymized (see Section 6).
 - Setups owned by deleted users become orphaned (`user_id` set to NULL).
 
@@ -248,6 +260,9 @@ Core catalog of all desk setup items across 9 categories.
 | `image_url` | `VARCHAR(500)` | `NULL` | Primary product image URL (Cloudflare R2) |
 | `dimensions` | `JSONB` | `NULL` | Physical size: `{width, depth, height, weight}` in cm/g |
 | `is_active` | `BOOLEAN` | `NOT NULL DEFAULT true` | Soft-delete / hide flag |
+| `rating` | `DECIMAL(2,1)` | `NULL` | Average product rating (0-5) |
+| `review_count` | `INTEGER` | `NOT NULL DEFAULT 0` | Number of reviews |
+| `images` | `TEXT[]` | `NOT NULL DEFAULT '{}'` | Additional product image URLs |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Record creation |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Last update |
 
@@ -348,20 +363,21 @@ A user's desk setup configuration. Can be public (shared) or private (draft).
 | `name` | `VARCHAR(255)` | `NOT NULL` | Setup name (e.g., "My Gaming Setup") |
 | `slug` | `VARCHAR(300)` | `UNIQUE NOT NULL` | URL-friendly identifier |
 | `room_type` | `room_type_enum` | `NULL` | Type of room |
-| `room_dimensions` | `JSONB` | `NULL` | `{width, depth}` in cm |
+| `room_dimensions` | `JSONB` | `NULL` | `{width, depth, height}` in cm |
 | `theme` | `VARCHAR(100)` | `NULL` | Theme name (e.g., "Japandi", "Gaming RGB") |
 | `is_public` | `BOOLEAN` | `NOT NULL DEFAULT false` | Whether visible in public gallery |
 | `total_price` | `DECIMAL(12,0)` | `NULL` | Cached sum of all item prices in VND |
 | `cover_image_url` | `VARCHAR(500)` | `NULL` | Generated cover image (html2canvas export) |
 | `view_count` | `INTEGER` | `NOT NULL DEFAULT 0` | Denormalized view counter |
+| `deleted_at` | `TIMESTAMPTZ` | `NULL` | Soft-delete timestamp (NULL = active) |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Creation time |
 | `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Last modification time |
 
 **`room_dimensions` JSONB shape:**
 
 ```json
-{"width": 350, "depth": 400}
-// Room width and depth in centimeters
+{"width": 350, "depth": 400, "height": 270, "unit": "cm"}
+// Room width, depth, height in centimeters; unit defaults to "cm"
 ```
 
 **Notes:**
@@ -412,6 +428,7 @@ Curated theme definitions (Japandi, Industrial, Gaming RGB, etc.).
 | `style_tags` | `TEXT[]` | `NOT NULL DEFAULT '{}'` | Tags: `minimalist`, `warm`, `natural`, etc. |
 | `is_featured` | `BOOLEAN` | `NOT NULL DEFAULT false` | Show on homepage / gallery highlight |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Creation time |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now() ON UPDATE now()` | Last modification time |
 
 ---
 
@@ -514,6 +531,7 @@ User preferences for email notifications.
 | `user_id` | `VARCHAR` | `NOT NULL FK → users.id ON DELETE CASCADE` | Subscriber |
 | `subscription_type` | `subscription_type_enum` | `NOT NULL` | Type of email subscription |
 | `is_active` | `BOOLEAN` | `NOT NULL DEFAULT true` | Whether subscription is active |
+| `metadata` | `JSONB` | `NOT NULL DEFAULT '{}'` | Type-specific data (e.g., `{"componentIds": ["comp_001"]}` for price alerts) |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Subscription creation time |
 
 **Unique Constraint:** (`user_id`, `subscription_type`) — one subscription record per type per user.
@@ -522,6 +540,28 @@ User preferences for email notifications.
 - `price_alert`: notify when a favorited component drops in price.
 - `weekly_digest`: trending setups and new themes.
 - `promotions`: partner deals and sponsored content.
+- `new_setups`: notifications when new public setups match user's favorite themes.
+
+---
+
+### 2.15 `verification_token`
+
+Stores email verification and password reset tokens. Used by NextAuth.js `VerificationToken` model and custom auth flows.
+
+| Column | Type | Constraints | Description |
+|---|---|---|---|
+| `identifier` | `VARCHAR(255)` | `NOT NULL` | Part of composite PK — email address |
+| `token` | `VARCHAR(255)` | `NOT NULL` | Part of composite PK — unique token |
+| `expires` | `TIMESTAMPTZ` | `NOT NULL` | Token expiry time |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT now()` | Token creation time |
+
+**Primary Key:** (`identifier`, `token`)
+
+**Notes:**
+- `identifier` is the email address the token was sent to.
+- Tokens are deleted after use or expiry.
+- Verification tokens: 24h expiry. Reset tokens: 1h expiry.
+- NextAuth.js adapter uses this table automatically for email verification.
 
 ---
 

@@ -33,6 +33,8 @@ All authenticated endpoints require a session cookie set via NextAuth.js. No bea
 
 For programmatic API access, include the `next-auth.session-token` cookie or pass the CSRF token via the `X-CSRF-Token` header on state-changing requests.
 
+**Auth providers:** Email/Password (`CredentialsProvider`), Google OAuth, Facebook OAuth. Email verification required for credentials accounts. Password reset via Resend email.
+
 ---
 
 ## 2. API Versioning
@@ -42,6 +44,7 @@ For programmatic API access, include the `next-auth.session-token` cookie or pas
 All API endpoints are versioned via the URL path prefix: `/api/v1/...`
 
 **Rules:**
+
 - **Current version** is v1. All endpoints in this document are under `/api/v1/`.
 - **Unversioned routes** (`/api/...`) redirect (307) to the current version (`/api/v1/...`).
 - **New major versions** (v2, v3) are created when breaking changes are introduced.
@@ -144,11 +147,11 @@ X-RateLimit-Reset: 1718700000
 
 ## 3. Authentication Endpoints (v1)
 
-All auth endpoints are handled by NextAuth.js under the hood. These are the exposed API routes.
+All auth endpoints are handled by NextAuth.js. Supports **OAuth** (Google + Facebook) and **email/password** via `CredentialsProvider`.
 
 ### POST /api/v1/auth/signin
 
-Initiate sign-in with a provider.
+Sign in with OAuth provider or email/password.
 
 | Property | Value |
 |----------|-------|
@@ -156,7 +159,7 @@ Initiate sign-in with a provider.
 | **Rate Limit** | public (100/min) |
 | **Method** | POST |
 
-**Request Body:**
+**Request Body (OAuth):**
 
 ```json
 {
@@ -166,21 +169,41 @@ Initiate sign-in with a provider.
 }
 ```
 
+**Request Body (Credentials):**
+
+```json
+{
+  "email": "nguyenvana@example.com",
+  "password": "securePassword123",
+  "redirect": "https://gobuildgo.vn/dashboard",
+  "csrfToken": "abc123..."
+}
+```
+
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `provider` | `string` | Yes | One of: `google`, `facebook`, `github` |
+| `provider` | `string` | Conditional | OAuth: `google` or `facebook`. Omit for email/password. |
+| `email` | `string` | Conditional | Required for credentials sign-in. Valid email format. |
+| `password` | `string` | Conditional | Required for credentials sign-in. Min 8 chars. |
 | `redirect` | `string` | No | URL to redirect after sign-in |
 | `csrfToken` | `string` | Yes | CSRF token from `GET /api/v1/auth/csrf` |
 
-**Success Response:** `302 Redirect` to the provider's OAuth page, or `200 OK` with redirect URL for popup flows.
+**Success Response (OAuth):** `302 Redirect` to the provider's OAuth page, or `200 OK` with redirect URL for popup flows.
+
+**Success Response (Credentials):** `302 Redirect` to the specified redirect URL (or `/dashboard`).
 
 **Error Responses:**
 
 | Status | Code | Message |
 |--------|------|---------|
-| 400 | `MISSING_PROVIDER` | Provider is required |
+| 400 | `MISSING_PROVIDER` | Provider is required for OAuth sign-in |
 | 400 | `INVALID_PROVIDER` | Provider "xyz" is not configured |
+| 400 | `MISSING_CREDENTIALS` | Email and password are required |
+| 400 | `INVALID_EMAIL` | Invalid email format |
+| 401 | `INVALID_CREDENTIALS` | Incorrect email or password |
+| 401 | `EMAIL_NOT_VERIFIED` | Email not verified. Please check your inbox. |
 | 403 | `CSRF_FAILED` | Invalid CSRF token |
+| 429 | `TOO_MANY_ATTEMPTS` | Too many sign-in attempts. Try again in 15 minutes. |
 
 ---
 
@@ -214,6 +237,185 @@ Sign out the current user.
   "url": "https://gobuildgo.vn/"
 }
 ```
+
+---
+
+### POST /api/v1/auth/register
+
+Register a new account with email and password. Sends verification email.
+
+| Property | Value |
+|----------|-------|
+| **Auth Required** | No |
+| **Rate Limit** | public (100/min) |
+| **Method** | POST |
+
+**Request Body:**
+
+```json
+{
+  "name": "Nguyen Van A",
+  "email": "nguyenvana@example.com",
+  "password": "securePassword123",
+  "confirmPassword": "securePassword123"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `name` | `string` | Yes | Display name (2-50 chars) |
+| `email` | `string` | Yes | Valid email address (max 255 chars) |
+| `password` | `string` | Yes | Min 8 chars, must contain uppercase + lowercase + number |
+| `confirmPassword` | `string` | Yes | Must match `password` |
+
+**Success Response:** `201 Created`
+
+```json
+{
+  "message": "Account created. Please check your email to verify your account.",
+  "user": {
+    "id": "usr_abc123",
+    "name": "Nguyen Van A",
+    "email": "nguyenvana@example.com"
+  }
+}
+```
+
+**Error Responses:**
+
+| Status | Code | Message |
+|--------|------|---------|
+| 400 | `VALIDATION_ERROR` | Invalid input data |
+| 400 | `PASSWORD_TOO_SHORT` | Password must be at least 8 characters |
+| 400 | `PASSWORD_REQUIREMENTS` | Password must contain uppercase, lowercase, and number |
+| 400 | `PASSWORDS_DONT_MATCH` | Passwords do not match |
+| 409 | `EMAIL_EXISTS` | An account with this email already exists |
+| 429 | `RATE_LIMITED` | Too many requests |
+
+---
+
+### POST /api/v1/auth/verify-email
+
+Verify email address with token from verification email.
+
+| Property | Value |
+|----------|-------|
+| **Auth Required** | No |
+| **Rate Limit** | public (100/min) |
+| **Method** | POST |
+
+**Request Body:**
+
+```json
+{
+  "token": "verify_abc123..."
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `token` | `string` | Yes | Verification token from email |
+
+**Success Response:** `200 OK`
+
+```json
+{
+  "message": "Email verified successfully. You can now sign in."
+}
+```
+
+**Error Responses:**
+
+| Status | Code | Message |
+|--------|------|---------|
+| 400 | `MISSING_TOKEN` | Verification token is required |
+| 400 | `INVALID_TOKEN` | Invalid or expired verification token |
+
+---
+
+### POST /api/v1/auth/forgot-password
+
+Request a password reset email.
+
+| Property | Value |
+|----------|-------|
+| **Auth Required** | No |
+| **Rate Limit** | public (100/min) |
+| **Method** | POST |
+
+**Request Body:**
+
+```json
+{
+  "email": "nguyenvana@example.com"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `email` | `string` | Yes | Registered email address |
+
+**Success Response:** `200 OK`
+
+```json
+{
+  "message": "If an account exists with this email, a password reset link has been sent."
+}
+```
+
+> Always returns `200` to prevent email enumeration.
+
+**Error Responses:**
+
+| Status | Code | Message |
+|--------|------|---------|
+| 400 | `MISSING_EMAIL` | Email is required |
+| 429 | `RATE_LIMITED` | Too many requests |
+
+---
+
+### POST /api/v1/auth/reset-password
+
+Reset password with token from reset email.
+
+| Property | Value |
+|----------|-------|
+| **Auth Required** | No |
+| **Rate Limit** | public (100/min) |
+| **Method** | POST |
+
+**Request Body:**
+
+```json
+{
+  "token": "reset_abc123...",
+  "password": "newSecurePassword456",
+  "confirmPassword": "newSecurePassword456"
+}
+```
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `token` | `string` | Yes | Reset token from email |
+| `password` | `string` | Yes | New password (min 8 chars, uppercase + lowercase + number) |
+| `confirmPassword` | `string` | Yes | Must match `password` |
+
+**Success Response:** `200 OK`
+
+```json
+{
+  "message": "Password reset successfully. You can now sign in with your new password."
+}
+```
+
+**Error Responses:**
+
+| Status | Code | Message |
+|--------|------|---------|
+| 400 | `MISSING_TOKEN` | Reset token is required |
+| 400 | `INVALID_TOKEN` | Invalid or expired reset token |
+| 400 | `PASSWORD_TOO_SHORT` | Password must be at least 8 characters |
+| 400 | `PASSWORDS_DONT_MATCH` | Passwords do not match |
 
 ---
 
@@ -267,6 +469,12 @@ List all configured authentication providers.
 
 ```json
 {
+  "credentials": {
+    "id": "credentials",
+    "name": "Email & Password",
+    "type": "credentials",
+    "signinUrl": "https://gobuildgo.vn/api/v1/auth/signin"
+  },
   "google": {
     "id": "google",
     "name": "Google",
@@ -322,7 +530,7 @@ List components with filtering, sorting, and pagination.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `category` | `string` | — | Filter by category: `desk`, `chair`, `monitor`, `keyboard`, `mouse`, `headset`, `speaker`, `lamp`, `decor`, `cable`, `storage`, `webcam`, `microphone`, `mat`, `stand`, `other` |
+| `category` | `string` | — | Filter by category: `desk`, `chair`, `monitor`, `keyboard`, `mouse`, `lighting`, `decor`, `audio`, `accessory` |
 | `min_price` | `number` | — | Minimum price in VND |
 | `max_price` | `number` | — | Maximum price in VND |
 | `brand` | `string` | — | Filter by brand name (case-insensitive) |
@@ -479,7 +687,7 @@ Get price history for a component (last 30 days).
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `shop` | `string` | — | Filter by shop: `shopee`, `lazada`, `tiki`, `phongvu` |
+| `shop` | `string` | — | Filter by shop: `shopee`, `lazada`, `tiki`, `phongvu`, `gearvn`, `nhaxinh` |
 | `days` | `number` | `30` | Number of days of history (max 90) |
 
 **Success Response:** `200 OK`
@@ -655,11 +863,11 @@ List public setups with filtering and pagination.
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `room_type` | `string` | — | Filter: `bedroom`, `office`, `studio`, `gaming_room`, `living_room` |
+| `room_type` | `string` | — | Filter: `bedroom`, `office`, `studio`, `gaming_room` |
 | `theme` | `string` | — | Filter by theme slug |
 | `budget_min` | `number` | — | Minimum total budget in VND |
 | `budget_max` | `number` | — | Maximum total budget in VND |
-| `sort` | `string` | `popular` | Sort: `popular`, `newest`, `budget_asc`, `budget_desc`, `most_liked` |
+| `sort` | `string` | `popular` | Sort: `popular`, `newest`, `total_price_asc`, `total_price_desc`, `most_liked` |
 | `page` | `number` | `1` | Page number |
 | `limit` | `number` | `20` | Items per page (max 50) |
 
@@ -673,8 +881,8 @@ List public setups with filtering and pagination.
       "name": "Minimalist White Setup",
       "roomType": "bedroom",
       "theme": "minimalist",
-      "thumbnailUrl": "https://gobuildgo.vn/thumbs/setup-001.jpg",
-      "totalBudget": 35000000,
+      "coverImageUrl": "https://gobuildgo.vn/thumbs/setup-001.jpg",
+      "totalPrice": 35000000,
       "itemCount": 8,
       "likeCount": 234,
       "author": {
@@ -709,6 +917,7 @@ Create a new setup.
 ```json
 {
   "name": "My Dream Setup",
+  "slug": "my-dream-setup",
   "roomType": "gaming_room",
   "roomDimensions": {
     "width": 350,
@@ -744,6 +953,7 @@ Create a new setup.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `name` | `string` | Yes | Setup name (3-100 chars) |
+| `slug` | `string` | No | URL-friendly identifier; auto-generated from name if omitted |
 | `roomType` | `string` | Yes | Room type enum |
 | `roomDimensions` | `object` | No | Width/depth/height + unit |
 | `theme` | `string` | No | Theme slug |
@@ -759,6 +969,7 @@ Create a new setup.
 {
   "id": "setup_002",
   "name": "My Dream Setup",
+  "slug": "my-dream-setup",
   "roomType": "gaming_room",
   "roomDimensions": {
     "width": 350,
@@ -768,7 +979,7 @@ Create a new setup.
   },
   "theme": "rgb",
   "isPublic": true,
-  "totalBudget": 31400000,
+  "totalPrice": 31400000,
   "itemCount": 2,
   "likeCount": 0,
   "author": {
@@ -787,6 +998,7 @@ Create a new setup.
 | 400 | `VALIDATION_ERROR` | Name must be between 3 and 100 characters |
 | 400 | `INVALID_COMPONENT` | Component "comp_999" not found |
 | 400 | `TOO_MANY_ITEMS` | Maximum 50 items per setup |
+| 400 | `DUPLICATE_SLUG` | A setup with this slug already exists |
 | 401 | `UNAUTHENTICATED` | Authentication required |
 
 ---
@@ -822,7 +1034,7 @@ Get a single setup with all items and component details.
   },
   "theme": "minimalist",
   "isPublic": true,
-  "totalBudget": 35000000,
+  "totalPrice": 35000000,
   "likeCount": 234,
   "isLiked": false,
   "author": {
@@ -975,7 +1187,7 @@ Clone a setup to the current user's account.
   "roomType": "bedroom",
   "theme": "minimalist",
   "isPublic": false,
-  "totalBudget": 35000000,
+  "totalPrice": 35000000,
   "itemCount": 8,
   "likeCount": 0,
   "author": {
@@ -1146,7 +1358,7 @@ List all available themes.
       "slug": "minimalist",
       "name": "Minimalist",
       "description": "Clean, clutter-free aesthetic with neutral tones",
-      "thumbnailUrl": "https://gobuildgo.vn/themes/minimalist.jpg",
+      "coverImageUrl": "https://gobuildgo.vn/themes/minimalist.jpg",
       "setupCount": 45,
       "popularColors": ["white", "black", "wood"],
       "popularBrands": ["IKEA", "Secretlab", "Apple"]
@@ -1155,7 +1367,7 @@ List all available themes.
       "slug": "rgb",
       "name": "RGB Gaming",
       "description": "Vibrant RGB lighting with bold colors",
-      "thumbnailUrl": "https://gobuildgo.vn/themes/rgb.jpg",
+      "coverImageUrl": "https://gobuildgo.vn/themes/rgb.jpg",
       "setupCount": 78,
       "popularColors": ["black", "purple", "blue"],
       "popularBrands": ["Razer", "Corsair", "Lian Li"]
@@ -1164,7 +1376,7 @@ List all available themes.
       "slug": "cozy",
       "name": "Cozy Warm",
       "description": "Warm lighting and comfortable vibes",
-      "thumbnailUrl": "https://gobuildgo.vn/themes/cozy.jpg",
+      "coverImageUrl": "https://gobuildgo.vn/themes/cozy.jpg",
       "setupCount": 32,
       "popularColors": ["warm white", "wood", "cream"],
       "popularBrands": ["IKEA", "Xiaomi", "Philips"]
@@ -1199,7 +1411,7 @@ Get theme details with recommended components.
   "slug": "minimalist",
   "name": "Minimalist",
   "description": "Clean, clutter-free aesthetic with neutral tones",
-  "thumbnailUrl": "https://gobuildgo.vn/themes/minimalist.jpg",
+  "coverImageUrl": "https://gobuildgo.vn/themes/minimalist.jpg",
   "setupCount": 45,
   "popularColors": ["white", "black", "wood"],
   "recommendedComponents": [
@@ -1577,7 +1789,7 @@ Get the current user's setups.
       "roomType": "gaming_room",
       "theme": "rgb",
       "isPublic": true,
-      "totalBudget": 31400000,
+      "totalPrice": 31400000,
       "itemCount": 2,
       "likeCount": 5,
       "createdAt": "2026-06-18T10:00:00.000Z",
@@ -1937,7 +2149,7 @@ Get AI analysis result for a completed upload.
   ],
   "suggestedItems": [
     {
-      "category": "lamp",
+      "category": "lighting",
       "reason": "No desk lamp detected; recommended for the detected minimalist style",
       "recommendedComponents": [
         {
@@ -1949,7 +2161,7 @@ Get AI analysis result for a completed upload.
       ]
     },
     {
-      "category": "mat",
+      "category": "accessory",
       "reason": "Large desk surface detected without a desk mat",
       "recommendedComponents": [
         {
@@ -2115,7 +2327,7 @@ Bulk import components via JSON array.
     {
       "name": "Logitech G Pro X",
       "brand": "Logitech",
-      "category": "headset"
+      "category": "audio"
     }
   ],
   "skipDuplicates": true
@@ -2419,8 +2631,8 @@ Sort is controlled via the `sort` query parameter. Common values:
 | `price_desc` | `lowestPrice` | Descending |
 | `name_asc` | `name` | Ascending |
 | `most_liked` | `likeCount` | Descending |
-| `budget_asc` | `totalBudget` | Ascending |
-| `budget_desc` | `totalBudget` | Descending |
+| `total_price_asc` | `totalPrice` | Ascending |
+| `total_price_desc` | `totalPrice` | Descending |
 
 ### Error Format
 
@@ -2473,6 +2685,7 @@ All errors use a consistent structure:
 ### CORS
 
 The API allows requests from:
+
 - `https://gobuildgo.vn`
 - `https://www.gobuildgo.vn`
 - `https://staging.gobuildgo.vn`
@@ -2495,13 +2708,12 @@ import { z } from "zod";
 // =============================================================================
 
 const CATEGORIES = [
-  "desk", "chair", "monitor", "keyboard", "mouse", "headset",
-  "speaker", "lamp", "decor", "cable", "storage", "webcam",
-  "microphone", "mat", "stand", "other",
+  "desk", "chair", "monitor", "keyboard", "mouse",
+  "lighting", "decor", "audio", "accessory",
 ] as const;
 
 const ROOM_TYPES = [
-  "bedroom", "office", "studio", "gaming_room", "living_room",
+  "bedroom", "office", "studio", "gaming_room",
 ] as const;
 
 const STYLE_TAGS = [
@@ -2509,7 +2721,7 @@ const STYLE_TAGS = [
 ] as const;
 
 const SHOPS = [
-  "shopee", "lazada", "tiki", "phongvu",
+  "shopee", "lazada", "tiki", "phongvu", "gearvn", "nhaxinh",
 ] as const;
 
 const SORT_OPTIONS_COMPONENTS = [
@@ -2517,7 +2729,7 @@ const SORT_OPTIONS_COMPONENTS = [
 ] as const;
 
 const SORT_OPTIONS_SETUPS = [
-  "popular", "newest", "budget_asc", "budget_desc", "most_liked",
+  "popular", "newest", "total_price_asc", "total_price_desc", "most_liked",
 ] as const;
 
 // =============================================================================
@@ -2531,6 +2743,58 @@ const paginationSchema = z.object({
 
 // =============================================================================
 // COMPONENT SCHEMAS
+// =============================================================================
+
+// =============================================================================
+// AUTH SCHEMAS
+// =============================================================================
+
+const authProviderEnum = z.enum(["google", "facebook"]);
+
+const signInOAuthSchema = z.object({
+  provider: authProviderEnum,
+  redirect: z.string().url().optional(),
+  csrfToken: z.string().min(1),
+});
+
+const signInCredentialsSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(128),
+  redirect: z.string().url().optional(),
+  csrfToken: z.string().min(1),
+});
+
+const registerSchema = z.object({
+  name: z.string().min(2).max(50),
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(128)
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Must contain uppercase, lowercase, and number"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+const verifyEmailSchema = z.object({
+  token: z.string().min(1),
+});
+
+const forgotPasswordSchema = z.object({
+  email: z.string().email().max(255),
+});
+
+const resetPasswordSchema = z.object({
+  token: z.string().min(1),
+  password: z.string().min(8).max(128)
+    .regex(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/, "Must contain uppercase, lowercase, and number"),
+  confirmPassword: z.string(),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Passwords do not match",
+  path: ["confirmPassword"],
+});
+
+// =============================================================================
+// COMPONENT SCHEMAS (continued)
 // =============================================================================
 
 const componentFilterSchema = paginationSchema.extend({
@@ -2583,6 +2847,7 @@ const setupDimensionsSchema = z.object({
 
 const setupCreateSchema = z.object({
   name: z.string().min(3).max(100),
+  slug: z.string().min(3).max(300).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
   roomType: z.enum(ROOM_TYPES),
   roomDimensions: setupDimensionsSchema.optional(),
   theme: z.string().min(1).max(50).optional(),
@@ -2592,6 +2857,7 @@ const setupCreateSchema = z.object({
 
 const setupUpdateSchema = z.object({
   name: z.string().min(3).max(100).optional(),
+  slug: z.string().min(3).max(300).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
   roomType: z.enum(ROOM_TYPES).optional(),
   roomDimensions: setupDimensionsSchema.optional(),
   theme: z.string().min(1).max(50).optional(),
