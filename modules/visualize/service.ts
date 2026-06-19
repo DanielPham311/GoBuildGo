@@ -1,0 +1,117 @@
+import { prisma } from "@/shared/db";
+import { embedText, generateRoomImage } from "@/shared/ai";
+import type { VisualizeRequest } from "./schema";
+import type { RetrievedItem, VisualizeResult } from "./public";
+
+// RAG retrieval + image generation. Reference: docs/RAG_VISUALIZATION.md §4–5.
+
+/**
+ * Vector search over components using pgvector cosine distance (`<=>`).
+ * Requires the `embedding vector(768)` column + HNSW index (Phase 0 migration).
+ */
+async function searchSimilar(queryVec: number[], req: VisualizeRequest): Promise<RetrievedItem[]> {
+  const vecLiteral = `[${queryVec.join(",")}]`;
+
+  // Build WHERE filters alongside the vector search so budget/room are hard constraints.
+  const conditions: string[] = ["c.is_active = true", "c.embedding IS NOT NULL"];
+  const params: unknown[] = [vecLiteral];
+
+  if (req.maxPrice) {
+    params.push(req.maxPrice);
+    conditions.push(`EXISTS (
+      SELECT 1 FROM prices p
+      WHERE p.component_id = c.id AND p.is_available = true AND p.price <= $${params.length}
+    )`);
+  }
+
+  params.push(req.topK);
+  const limitIdx = params.length;
+
+  const rows = await prisma.$queryRawUnsafe<
+    {
+      id: string;
+      category: string;
+      brand: string;
+      name: string;
+      description: string | null;
+      colors: string[];
+      style_tags: string[];
+      image_url: string | null;
+      similarity: number;
+    }[]
+  >(
+    `SELECT c.id, c.category, c.brand, c.name, c.description,
+            c.colors, c.style_tags, c.image_url,
+            1 - (c.embedding <=> $1::vector) AS similarity
+     FROM components c
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY c.embedding <=> $1::vector
+     LIMIT $${limitIdx}`,
+    ...params,
+  );
+
+  const items = rows.map((r) => ({
+    id: r.id,
+    category: r.category,
+    brand: r.brand,
+    name: r.name,
+    description: r.description,
+    colors: r.colors,
+    styleTags: r.style_tags,
+    imageUrl: r.image_url,
+    similarity: Number(r.similarity),
+    offer: null as RetrievedItem["offer"],
+  }));
+
+  await attachOffers(items);
+  return items;
+}
+
+/** Attach the cheapest available price + buy link to each retrieved item. */
+async function attachOffers(items: RetrievedItem[]): Promise<void> {
+  if (items.length === 0) return;
+
+  const prices = await prisma.price.findMany({
+    where: { componentId: { in: items.map((i) => i.id) }, isAvailable: true },
+    orderBy: { price: "asc" },
+    select: { componentId: true, shop: true, price: true, url: true },
+  });
+
+  // findMany returns ascending by price → first seen per component is cheapest.
+  const cheapest = new Map<string, { shop: string; price: number; url: string }>();
+  for (const p of prices) {
+    if (!cheapest.has(p.componentId)) {
+      cheapest.set(p.componentId, { shop: p.shop, price: Number(p.price), url: p.url });
+    }
+  }
+  for (const item of items) {
+    item.offer = cheapest.get(item.id) ?? null;
+  }
+}
+
+/** Build the image-gen prompt from retrieved items + the user's intent. */
+function buildPrompt(req: VisualizeRequest, items: RetrievedItem[]): string {
+  const room = req.roomType ? req.roomType.replace("_", " ") : "room";
+  const lines = items.map(
+    (i) => `- ${i.name} (${i.category}${i.colors.length ? `, ${i.colors.join("/")}` : ""})`,
+  );
+  return [
+    `Generate a photorealistic interior visualization of a ${room} that includes these items, arranged tastefully:`,
+    ...lines,
+    `User's vision: "${req.query}".`,
+    `Cohesive lighting and styling. No text or watermarks.`,
+  ].join("\n");
+}
+
+/** Full flow: embed query → vector search → generate room image. */
+export async function visualize(req: VisualizeRequest): Promise<VisualizeResult> {
+  const queryVec = await embedText(req.query);
+  const items = await searchSimilar(queryVec, req);
+
+  let image: string | null = null;
+  if (items.length > 0) {
+    image = await generateRoomImage(buildPrompt(req, items));
+  }
+
+  return { query: req.query, items, image };
+}
