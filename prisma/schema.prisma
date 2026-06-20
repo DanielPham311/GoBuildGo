@@ -84,6 +84,10 @@ model Component {
   dimensions  Json?
   isActive    Boolean           @default(true)
 
+  // pgvector embedding (text-embedding-004 = 768 dims). Phase 0 migration.
+  embedding       Unsupported("vector(768)")?
+  embeddingStale  Boolean           @default(true)
+
   prices          Price[]
   setupItems      SetupItem[]
   themeComponents ThemeComponent[]
@@ -121,8 +125,8 @@ model Price {
 
   createdAt     DateTime  @default(now())
 
+  @@unique([componentId, shop, condition])
   @@index([componentId, price])
-  @@index([componentId, shop, condition])
   @@index([shop, isAvailable])
   @@map("prices")
 }
