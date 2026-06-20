@@ -219,6 +219,17 @@ model ThemeComponent {
   @@map("themes_components")
 }
 
+model GeneratedRender {
+  id          String   @id @default(cuid())
+  promptHash  String   @unique
+  imageUrl    String
+  itemIds     String[]
+  roomType    String?
+  createdAt   DateTime @default(now())
+
+  @@map("generated_renders")
+}
+
 model AffiliateClick {
   id          String    @id @default(cuid())
   componentId String
@@ -275,6 +286,20 @@ model SetupView {
 
   @@index([setupId, viewedAt(sort: Desc)])
   @@map("setup_views")
+}
+
+model ScraperHealth {
+  id          String   @id @default(cuid())
+  scraperName String
+  status      String   // "ok" | "error" | "running"
+  durationMs  Int?
+  upserted    Int      @default(0)
+  skipped     Int      @default(0)
+  errors      Int      @default(0)
+  ranAt       DateTime @default(now())
+
+  @@index([scraperName, ranAt(sort: Desc)])
+  @@map("scraper_health")
 }
 
 model EmailSubscription {

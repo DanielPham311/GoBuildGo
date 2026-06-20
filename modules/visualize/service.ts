@@ -1,9 +1,23 @@
 import { prisma } from "@/shared/db";
 import { embedText, generateRoomImage } from "@/shared/ai";
+import crypto from "node:crypto";
 import type { VisualizeRequest } from "./schema";
 import type { RetrievedItem, VisualizeResult } from "./public";
 
 // RAG retrieval + image generation. Reference: docs/RAG_VISUALIZATION.md §4–5.
+
+/**
+ * Build a deterministic hash of the render inputs so identical requests
+ * return the cached image without hitting Gemini.
+ */
+function promptHash(req: VisualizeRequest, itemIds: string[]): string {
+  const payload = JSON.stringify({
+    q: req.query,
+    room: req.roomType ?? null,
+    items: itemIds.sort(),
+  });
+  return crypto.createHash("sha256").update(payload).digest("hex").slice(0, 32);
+}
 
 /**
  * Vector search over components using pgvector cosine distance (`<=>`).
@@ -103,14 +117,41 @@ function buildPrompt(req: VisualizeRequest, items: RetrievedItem[]): string {
   ].join("\n");
 }
 
-/** Full flow: embed query → vector search → generate room image. */
+/** Full flow: embed query → vector search → check cache → generate or return cached image. */
 export async function visualize(req: VisualizeRequest): Promise<VisualizeResult> {
   const queryVec = await embedText(req.query);
   const items = await searchSimilar(queryVec, req);
 
   let image: string | null = null;
+
   if (items.length > 0) {
-    image = await generateRoomImage(buildPrompt(req, items));
+    const itemIds = items.map((i) => i.id);
+    const hash = promptHash(req, itemIds);
+
+    // Check cache first
+    const cached = await prisma.generatedRender.findUnique({
+      where: { promptHash: hash },
+      select: { imageUrl: true },
+    });
+
+    if (cached) {
+      image = cached.imageUrl;
+    } else {
+      image = await generateRoomImage(buildPrompt(req, items));
+      // Cache the result (fire-and-forget — non-critical)
+      prisma.generatedRender
+        .create({
+          data: {
+            promptHash: hash,
+            imageUrl: image,
+            itemIds,
+            roomType: req.roomType ?? null,
+          },
+        })
+        .catch(() => {
+          // ignore cache write failures
+        });
+    }
   }
 
   return { query: req.query, items, image };

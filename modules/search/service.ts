@@ -1,5 +1,6 @@
 import { prisma } from "@/shared/db";
 import { embedText } from "@/shared/ai";
+import { COMPONENT_CATEGORIES } from "@/lib/constants";
 import type { SearchQuery } from "./schema";
 import type { SearchResultItem } from "./public";
 
@@ -28,7 +29,8 @@ async function searchSimilar(queryVec: number[], query: SearchQuery): Promise<Se
     )`);
   }
 
-  params.push(query.topK);
+  // Fetch more than topK so we have room to diversify across categories.
+  params.push(query.topK * 3);
   const limitIdx = params.length;
 
   const rows = await prisma.$queryRawUnsafe<
@@ -72,6 +74,58 @@ async function searchSimilar(queryVec: number[], query: SearchQuery): Promise<Se
   }));
 }
 
+/**
+ * Diversify results across categories.
+ * Ensures each category is represented by its best match, then fills remaining slots
+ * by similarity. Prevents "5 mice, no desk" problem.
+ *
+ * Algorithm:
+ * 1. Pick the best item per category (round-robin by similarity)
+ * 2. Fill remaining slots with whatever's most similar
+ */
+function diversify(items: SearchResultItem[], topK: number): SearchResultItem[] {
+  if (items.length <= topK) return items;
+
+  const picked: SearchResultItem[] = [];
+  const pickedIds = new Set<string>();
+  const byCategory = new Map<string, SearchResultItem[]>();
+
+  // Group by category
+  for (const item of items) {
+    const list = byCategory.get(item.category) ?? [];
+    list.push(item);
+    byCategory.set(item.category, list);
+  }
+
+  // Round-robin: pick best from each category
+  let changed = true;
+  while (picked.length < topK && changed) {
+    changed = false;
+    for (const category of COMPONENT_CATEGORIES) {
+      if (picked.length >= topK) break;
+      const list = byCategory.get(category);
+      if (!list) continue;
+      const next = list.find((i) => !pickedIds.has(i.id));
+      if (next) {
+        picked.push(next);
+        pickedIds.add(next.id);
+        changed = true;
+      }
+    }
+  }
+
+  // Fill remaining slots by similarity
+  for (const item of items) {
+    if (picked.length >= topK) break;
+    if (!pickedIds.has(item.id)) {
+      picked.push(item);
+      pickedIds.add(item.id);
+    }
+  }
+
+  return picked;
+}
+
 /** Attach the cheapest available price + buy link to each result item. */
 async function attachOffers(items: SearchResultItem[]): Promise<void> {
   if (items.length === 0) return;
@@ -95,10 +149,11 @@ async function attachOffers(items: SearchResultItem[]): Promise<void> {
   }
 }
 
-/** Full RAG retrieval flow: embed query → vector search → attach offers. */
+/** Full RAG retrieval flow: embed query → vector search → diversify → attach offers. */
 export async function searchComponents(query: SearchQuery) {
   const queryVec = await embedText(query.q);
-  const items = await searchSimilar(queryVec, query);
+  const rawItems = await searchSimilar(queryVec, query);
+  const items = diversify(rawItems, query.topK);
   await attachOffers(items);
   return { query: query.q, items };
 }
