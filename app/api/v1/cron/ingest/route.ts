@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getAllScrapers } from "@/scripts/scrapers";
 import { cleanProduct } from "@/scripts/scrapers/clean";
+import { findDuplicate } from "@/scripts/scrapers/dedup";
 import { prisma } from "@/shared/db";
 import { slugify } from "@/lib/utils";
 import { jsonError } from "@/shared/api/response";
@@ -9,9 +10,9 @@ import { NextResponse } from "next/server";
 /** Default search queries covering all 9 categories. Runs weekly. */
 const INGEST_QUERIES = [
   "gaming desk", "standing desk", "office desk",
-  "gaming chair", "office chair", "ergonomic chair",
+  "gaming chair", "office chair", "ergế công thái học",
   "mechanical keyboard", "wireless keyboard",
-  "gaming mouse", "wireless mouse",
+  "gaming mouse", "chuột không dây",
   "gaming monitor", "4k monitor",
   "desk lamp", "led strip light",
   "gaming headset", "bluetooth speaker",
@@ -19,17 +20,86 @@ const INGEST_QUERIES = [
   "desk mat", "webcam",
 ];
 
+/**
+ * Upsert price + write PriceHistory row when price changed.
+ * Returns true if price changed, false otherwise.
+ */
+async function upsertPriceWithHistory(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  componentId: string,
+  cleaned: ReturnType<typeof cleanProduct>,
+): Promise<boolean> {
+  const existing = await tx.price.findUnique({
+    where: {
+      componentId_shop_condition: {
+        componentId,
+        shop: cleaned.shop as never,
+        condition: "new",
+      },
+    },
+    select: { id: true, price: true },
+  });
+
+  // Write history if price changed
+  if (existing && Number(existing.price) !== cleaned.price) {
+    await tx.priceHistory.create({
+      data: {
+        priceId: existing.id,
+        oldPrice: existing.price,
+        newPrice: cleaned.price,
+      },
+    });
+  }
+
+  await tx.price.upsert({
+    where: {
+      componentId_shop_condition: {
+        componentId,
+        shop: cleaned.shop as never,
+        condition: "new",
+      },
+    },
+    create: {
+      componentId,
+      shop: cleaned.shop as never,
+      price: cleaned.price,
+      originalPrice: cleaned.originalPrice,
+      currency: "VND",
+      url: cleaned.url,
+      shopName: cleaned.shopName,
+      isAvailable: cleaned.isAvailable,
+    },
+    update: {
+      price: cleaned.price,
+      originalPrice: cleaned.originalPrice,
+      url: cleaned.url,
+      shopName: cleaned.shopName,
+      isAvailable: cleaned.isAvailable,
+    },
+  });
+
+  return !!existing;
+}
+
 export async function POST(req: NextRequest) {
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
     return jsonError("UNAUTHENTICATED", "Invalid cron secret");
   }
 
+  const startedAt = Date.now();
   const scrapers = getAllScrapers();
   let totalUpserted = 0;
-  const errors: string[] = [];
+  let totalSkipped = 0;
+  let totalPriceChanges = 0;
+  let totalErrors = 0;
 
   for (const scraper of scrapers) {
+    let scraperUpserted = 0;
+    let scraperSkipped = 0;
+    let scraperErrors = 0;
+    const scraperStartedAt = Date.now();
+
     for (const query of INGEST_QUERIES) {
       try {
         const rawItems = await scraper.search(query, 10);
@@ -37,6 +107,22 @@ export async function POST(req: NextRequest) {
           try {
             const cleaned = cleanProduct(scraper.normalize(raw));
             if (!cleaned.name || cleaned.price <= 0) continue;
+
+            const existingId = await findDuplicate(cleaned);
+
+            if (existingId) {
+              await prisma.$transaction(async (tx) => {
+                const priceChanged = await upsertPriceWithHistory(tx, existingId, cleaned);
+                if (priceChanged) totalPriceChanges++;
+                await tx.component.update({
+                  where: { id: existingId },
+                  data: { embeddingStale: true },
+                });
+              });
+              totalSkipped++;
+              scraperSkipped++;
+              continue;
+            }
 
             const slug = slugify(`${cleaned.brand}-${cleaned.name}`).slice(0, 80);
             await prisma.$transaction(async (tx) => {
@@ -48,7 +134,7 @@ export async function POST(req: NextRequest) {
                   brand: cleaned.brand,
                   category: cleaned.category as never,
                   description: cleaned.description,
-                  specs: cleaned.specs,
+                  specs: cleaned.specs as never,
                   colors: cleaned.colors,
                   styleTags: cleaned.styleTags,
                   imageUrl: cleaned.imageUrl,
@@ -65,45 +151,42 @@ export async function POST(req: NextRequest) {
                 },
               });
 
-              await tx.price.upsert({
-                where: {
-                  componentId_shop_condition: {
-                    componentId: comp.id,
-                    shop: cleaned.shop as never,
-                    condition: "new",
-                  },
-                },
-                create: {
-                  componentId: comp.id,
-                  shop: cleaned.shop as never,
-                  price: cleaned.price,
-                  originalPrice: cleaned.originalPrice,
-                  currency: "VND",
-                  url: cleaned.url,
-                  shopName: cleaned.shopName,
-                  isAvailable: cleaned.isAvailable,
-                },
-                update: {
-                  price: cleaned.price,
-                  originalPrice: cleaned.originalPrice,
-                  url: cleaned.url,
-                  shopName: cleaned.shopName,
-                  isAvailable: cleaned.isAvailable,
-                },
-              });
+              await upsertPriceWithHistory(tx, comp.id, cleaned);
             });
 
             totalUpserted++;
+            scraperUpserted++;
           } catch {
-            // skip individual item errors
+            totalErrors++;
+            scraperErrors++;
           }
         }
         await new Promise((r) => setTimeout(r, 1500));
       } catch (err) {
-        errors.push(`[${scraper.name}] ${query}: ${err}`);
+        totalErrors++;
+        scraperErrors++;
       }
     }
+
+    // Write health record per scraper
+    await prisma.scraperHealth.create({
+      data: {
+        scraperName: scraper.name,
+        status: scraperErrors === 0 ? "ok" : "error",
+        durationMs: Date.now() - scraperStartedAt,
+        upserted: scraperUpserted,
+        skipped: scraperSkipped,
+        errors: scraperErrors,
+      },
+    });
   }
 
-  return NextResponse.json({ ok: true, upserted: totalUpserted, errors });
+  return NextResponse.json({
+    ok: true,
+    upserted: totalUpserted,
+    skipped: totalSkipped,
+    priceChanges: totalPriceChanges,
+    errors: totalErrors,
+    durationMs: Date.now() - startedAt,
+  });
 }

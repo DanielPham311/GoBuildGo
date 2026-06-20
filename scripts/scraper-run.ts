@@ -1,11 +1,79 @@
 import { PrismaClient } from "@prisma/client";
 import { getAllScrapers } from "./scrapers";
 import { cleanProduct } from "./scrapers/clean";
+import { findDuplicate } from "./scrapers/dedup";
 import { slugify } from "@/lib/utils";
 
 const prisma = new PrismaClient();
 
-async function upsertComponent(product: ReturnType<typeof cleanProduct>) {
+async function upsertPriceWithHistory(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  componentId: string,
+  cleaned: ReturnType<typeof cleanProduct>,
+): Promise<boolean> {
+  const existing = await tx.price.findUnique({
+    where: {
+      componentId_shop_condition: {
+        componentId,
+        shop: cleaned.shop as never,
+        condition: "new",
+      },
+    },
+    select: { id: true, price: true },
+  });
+
+  if (existing && Number(existing.price) !== cleaned.price) {
+    await tx.priceHistory.create({
+      data: {
+        priceId: existing.id,
+        oldPrice: existing.price,
+        newPrice: cleaned.price,
+      },
+    });
+  }
+
+  await tx.price.upsert({
+    where: {
+      componentId_shop_condition: {
+        componentId,
+        shop: cleaned.shop as never,
+        condition: "new",
+      },
+    },
+    create: {
+      componentId,
+      shop: cleaned.shop as never,
+      price: cleaned.price,
+      originalPrice: cleaned.originalPrice,
+      currency: "VND",
+      url: cleaned.url,
+      shopName: cleaned.shopName,
+      isAvailable: cleaned.isAvailable,
+    },
+    update: {
+      price: cleaned.price,
+      originalPrice: cleaned.originalPrice,
+      url: cleaned.url,
+      shopName: cleaned.shopName,
+      isAvailable: cleaned.isAvailable,
+    },
+  });
+
+  return !!existing;
+}
+
+async function upsertProduct(product: ReturnType<typeof cleanProduct>): Promise<{ new: boolean; priceChanged: boolean }> {
+  // Check for existing price in this shop
+  const existingPrice = await prisma.price.findUnique({
+    where: {
+      componentId_shop_condition: {
+        componentId: "", // will be filled below
+        shop: product.shop as never,
+        condition: "new",
+      },
+    },
+  });
+
   const slug = slugify(`${product.brand}-${product.name}`).slice(0, 80);
 
   const component = await prisma.component.upsert({
@@ -36,36 +104,14 @@ async function upsertComponent(product: ReturnType<typeof cleanProduct>) {
     },
   });
 
+  let priceChanged = false;
   if (product.price > 0) {
-    await prisma.price.upsert({
-      where: {
-        componentId_shop_condition: {
-          componentId: component.id,
-          shop: product.shop as never,
-          condition: "new",
-        },
-      },
-      create: {
-        componentId: component.id,
-        shop: product.shop as never,
-        price: product.price,
-        originalPrice: product.originalPrice,
-        currency: "VND",
-        url: product.url,
-        shopName: product.shopName,
-        isAvailable: product.isAvailable,
-      },
-      update: {
-        price: product.price,
-        originalPrice: product.originalPrice,
-        url: product.url,
-        shopName: product.shopName,
-        isAvailable: product.isAvailable,
-      },
+    priceChanged = await prisma.$transaction(async (tx) => {
+      return upsertPriceWithHistory(tx, component.id, product);
     });
   }
 
-  return component;
+  return { new: !existingPrice, priceChanged };
 }
 
 async function main() {
@@ -77,8 +123,18 @@ async function main() {
   const scrapers = getAllScrapers();
   console.log(`Running ${scrapers.length} scraper(s) for ${queries.length} queries…`);
 
+  const startedAt = Date.now();
   let totalUpserted = 0;
+  let totalSkipped = 0;
+  let totalPriceChanges = 0;
+  let totalErrors = 0;
+
   for (const scraper of scrapers) {
+    let scraperUpserted = 0;
+    let scraperSkipped = 0;
+    let scraperErrors = 0;
+    const scraperStartedAt = Date.now();
+
     for (const query of queries) {
       try {
         console.log(`  [${scraper.name}] Searching: "${query}"`);
@@ -89,24 +145,59 @@ async function main() {
           try {
             const normalized = scraper.normalize(raw);
             const cleaned = cleanProduct(normalized);
-            if (cleaned.name && cleaned.price > 0) {
-              await upsertComponent(cleaned);
-              totalUpserted++;
+            if (!cleaned.name || cleaned.price <= 0) continue;
+
+            const existingId = await findDuplicate(cleaned);
+
+            if (existingId) {
+              let priceChanged = false;
+              if (cleaned.price > 0) {
+                priceChanged = await prisma.$transaction(async (tx) => {
+                  return upsertPriceWithHistory(tx, existingId, cleaned);
+                });
+              }
+              await prisma.component.update({
+                where: { id: existingId },
+                data: { embeddingStale: true },
+              });
+              totalSkipped++;
+              scraperSkipped++;
+              if (priceChanged) totalPriceChanges++;
+              continue;
             }
+
+            const { priceChanged } = await upsertProduct(cleaned);
+            totalUpserted++;
+            scraperUpserted++;
+            if (priceChanged) totalPriceChanges++;
           } catch {
-            // skip individual item errors
+            totalErrors++;
+            scraperErrors++;
           }
         }
 
-        // Rate limit between queries
         await new Promise((r) => setTimeout(r, 1500));
       } catch (err) {
         console.error(`  [${scraper.name}] Search failed for "${query}": ${err}`);
+        totalErrors++;
+        scraperErrors++;
       }
     }
+
+    // Write health record
+    await prisma.scraperHealth.create({
+      data: {
+        scraperName: scraper.name,
+        status: scraperErrors === 0 ? "ok" : "error",
+        durationMs: Date.now() - scraperStartedAt,
+        upserted: scraperUpserted,
+        skipped: scraperSkipped,
+        errors: scraperErrors,
+      },
+    });
   }
 
-  console.log(`\nDone. Upserted ${totalUpserted} items.`);
+  console.log(`\nDone in ${Date.now() - startedAt}ms. ${totalUpserted} new, ${totalSkipped} deduped, ${totalPriceChanges} price changes, ${totalErrors} errors.`);
 }
 
 main()
