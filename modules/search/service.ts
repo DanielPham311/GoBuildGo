@@ -1,0 +1,104 @@
+import { prisma } from "@/shared/db";
+import { embedText } from "@/shared/ai";
+import type { SearchQuery } from "./schema";
+import type { SearchResultItem } from "./public";
+
+/**
+ * Vector similarity search over components using pgvector cosine distance.
+ * Requires the `embedding vector(768)` column + HNSW index (Phase 0 migration).
+ * Reference: docs/RAG_VISUALIZATION.md §4.
+ */
+async function searchSimilar(queryVec: number[], query: SearchQuery): Promise<SearchResultItem[]> {
+  const vecLiteral = `[${queryVec.join(",")}]`;
+
+  // Build WHERE filters alongside the vector search so budget/category are hard constraints.
+  const conditions: string[] = ["c.is_active = true", "c.embedding IS NOT NULL"];
+  const params: unknown[] = [vecLiteral];
+
+  if (query.category) {
+    params.push(query.category);
+    conditions.push(`c.category = $${params.length}`);
+  }
+
+  if (query.maxPrice) {
+    params.push(query.maxPrice);
+    conditions.push(`EXISTS (
+      SELECT 1 FROM prices p
+      WHERE p.component_id = c.id AND p.is_available = true AND p.price <= $${params.length}
+    )`);
+  }
+
+  params.push(query.topK);
+  const limitIdx = params.length;
+
+  const rows = await prisma.$queryRawUnsafe<
+    {
+      id: string;
+      category: string;
+      brand: string;
+      name: string;
+      description: string | null;
+      colors: string[];
+      style_tags: string[];
+      image_url: string | null;
+      specs: unknown;
+      dimensions: unknown;
+      similarity: number;
+    }[]
+  >(
+    `SELECT c.id, c.category, c.brand, c.name, c.description,
+            c.colors, c.style_tags, c.image_url, c.specs, c.dimensions,
+            1 - (c.embedding <=> $1::vector) AS similarity
+     FROM components c
+     WHERE ${conditions.join(" AND ")}
+     ORDER BY c.embedding <=> $1::vector
+     LIMIT $${limitIdx}`,
+    ...params,
+  );
+
+  return rows.map((r) => ({
+    id: r.id,
+    category: r.category,
+    brand: r.brand,
+    name: r.name,
+    description: r.description,
+    colors: r.colors,
+    styleTags: r.style_tags,
+    imageUrl: r.image_url,
+    specs: r.specs,
+    dimensions: r.dimensions,
+    similarity: Number(r.similarity),
+    offer: null,
+  }));
+}
+
+/** Attach the cheapest available price + buy link to each result item. */
+async function attachOffers(items: SearchResultItem[]): Promise<void> {
+  if (items.length === 0) return;
+
+  const prices = await prisma.price.findMany({
+    where: { componentId: { in: items.map((i) => i.id) }, isAvailable: true },
+    orderBy: { price: "asc" },
+    select: { componentId: true, shop: true, price: true, url: true },
+  });
+
+  // findMany returns ascending by price → first seen per component is cheapest.
+  const cheapest = new Map<string, { shop: string; price: number; url: string }>();
+  for (const p of prices) {
+    if (!cheapest.has(p.componentId)) {
+      cheapest.set(p.componentId, { shop: p.shop, price: Number(p.price), url: p.url });
+    }
+  }
+
+  for (const item of items) {
+    item.offer = cheapest.get(item.id) ?? null;
+  }
+}
+
+/** Full RAG retrieval flow: embed query → vector search → attach offers. */
+export async function searchComponents(query: SearchQuery) {
+  const queryVec = await embedText(query.q);
+  const items = await searchSimilar(queryVec, query);
+  await attachOffers(items);
+  return { query: query.q, items };
+}

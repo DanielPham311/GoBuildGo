@@ -1,6 +1,8 @@
 // Gemini client — embeddings + image generation via REST (no SDK dep).
 // Reference: docs/RAG_VISUALIZATION.md §2.
 
+import { geminiRateLimiter } from "./rate-limit";
+
 const API = "https://generativelanguage.googleapis.com/v1beta";
 const EMBED_MODEL = "text-embedding-004"; // 768-dim
 const IMAGE_MODEL = "gemini-2.5-flash-image"; // "Nano Banana"
@@ -13,6 +15,7 @@ function apiKey(): string {
 
 /** Embed a single text into a 768-dim vector. */
 export async function embedText(text: string): Promise<number[]> {
+  await geminiRateLimiter.acquire();
   const res = await fetch(`${API}/models/${EMBED_MODEL}:embedContent?key=${apiKey()}`, {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -38,6 +41,7 @@ export async function generateRoomImage(
   prompt: string,
   refs: ImageInput[] = [],
 ): Promise<string> {
+  await geminiRateLimiter.acquire();
   const parts: unknown[] = [
     { text: prompt },
     ...refs.map((r) => ({ inline_data: { mime_type: r.mimeType, data: r.dataBase64 } })),
