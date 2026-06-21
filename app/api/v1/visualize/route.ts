@@ -3,7 +3,7 @@ import { visualizeRequestSchema, visualize } from "@/modules/visualize";
 import { jsonError } from "@/shared/api/response";
 import { NextResponse } from "next/server";
 
-// POST /api/v1/visualize — query → RAG retrieval → Gemini room image.
+// POST /api/v1/visualize — query → RAG retrieval → AI-generated room image.
 // Reference: docs/RAG_VISUALIZATION.md §4–5.
 export async function POST(req: NextRequest) {
   let body: unknown;

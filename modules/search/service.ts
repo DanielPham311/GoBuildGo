@@ -6,7 +6,7 @@ import type { SearchResultItem } from "./public";
 
 /**
  * Vector similarity search over components using pgvector cosine distance.
- * Requires the `embedding vector(768)` column + HNSW index (Phase 0 migration).
+ * Requires the `embedding vector(1024)` column + HNSW index.
  * Reference: docs/RAG_VISUALIZATION.md §4.
  */
 async function searchSimilar(queryVec: number[], query: SearchQuery): Promise<SearchResultItem[]> {

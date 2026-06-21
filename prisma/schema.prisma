@@ -91,8 +91,8 @@ model Component {
   dimensions  Json?
   isActive    Boolean           @default(true)
 
-  // pgvector embedding (text-embedding-004 = 768 dims). Phase 0 migration.
-  embedding       Unsupported("vector(768)")?
+  // pgvector embedding (voyage-4 = 1024 dims). Voyage AI.
+  embedding       Unsupported("vector(1024)")?
   embeddingStale  Boolean           @default(true)
 
   prices          Price[]

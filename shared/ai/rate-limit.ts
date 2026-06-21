@@ -1,6 +1,6 @@
 /**
- * Token-bucket rate limiter for Gemini API calls.
- * Stays safely under the free-tier 60 req/min cap.
+ * Token-bucket rate limiter for OpenRouter API calls.
+ * Stays safely under free-tier rate limits.
  */
 export class RateLimiter {
   private tokens: number;
@@ -35,5 +35,5 @@ export class RateLimiter {
   }
 }
 
-// Shared limiter: 50 req/min to stay safely under Gemini free tier (60/min).
-export const geminiRateLimiter = new RateLimiter(50);
+// Shared limiter: 20 req/min for OpenRouter free-tier models.
+export const aiRateLimiter = new RateLimiter(20);
