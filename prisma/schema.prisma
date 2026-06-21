@@ -49,13 +49,20 @@ enum SubscriptionType {
   promotions
 }
 
+enum UserRole {
+  user
+  admin
+}
+
 model User {
   id             String    @id @default(cuid())
   email          String?   @unique
   name           String?
   image          String?
   emailVerified  DateTime?
-  authProvider   String    @default("google")
+  passwordHash   String?
+  role           UserRole  @default(user)
+  authProvider   String    @default("credentials")
 
   setups          Setup[]
   affiliateClicks AffiliateClick[]

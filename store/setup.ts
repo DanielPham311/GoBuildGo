@@ -133,7 +133,9 @@ export const useSetupStore = create<SetupState>()(
 /** Derived helpers (use in components): */
 export function selectTotalPrice(state: SetupState): number {
   return state.items.reduce((sum, item) => {
-    return sum + ((item.component as unknown as { price?: number }).price ?? 0);
+    const comp = item.component as any;
+    const price = comp.offer?.price ?? comp.price ?? 0;
+    return sum + price;
   }, 0);
 }
 
