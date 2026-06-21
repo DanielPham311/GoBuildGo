@@ -1,2 +1,3 @@
-export { embedText, generateRoomImage } from "./gemini";
-export type { ImageInput } from "./gemini";
+export { embedText } from "./openrouter";
+export { generateRoomImage } from "./image-gen";
+export type { ImageInput } from "./image-gen";

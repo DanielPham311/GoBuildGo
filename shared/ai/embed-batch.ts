@@ -1,5 +1,5 @@
-import { embedText } from "./gemini";
-import { geminiRateLimiter } from "./rate-limit";
+import { embedText } from "./openrouter";
+import { aiRateLimiter } from "./rate-limit";
 
 const MAX_RETRIES = 3;
 const RETRY_BASE_MS = 2000;
@@ -26,7 +26,7 @@ export async function embedBatch(
 
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       try {
-        await geminiRateLimiter.acquire();
+        await aiRateLimiter.acquire();
         const vec = await embedText(text);
         results.set(id, vec);
         break;

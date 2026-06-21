@@ -8,7 +8,7 @@ import type { RetrievedItem, VisualizeResult } from "./public";
 
 /**
  * Build a deterministic hash of the render inputs so identical requests
- * return the cached image without hitting Gemini.
+ * return the cached image without hitting the AI API.
  */
 function promptHash(req: VisualizeRequest, itemIds: string[]): string {
   const payload = JSON.stringify({
@@ -21,7 +21,7 @@ function promptHash(req: VisualizeRequest, itemIds: string[]): string {
 
 /**
  * Vector search over components using pgvector cosine distance (`<=>`).
- * Requires the `embedding vector(768)` column + HNSW index (Phase 0 migration).
+ * Requires the `embedding vector(1024)` column + HNSW index.
  */
 async function searchSimilar(queryVec: number[], req: VisualizeRequest): Promise<RetrievedItem[]> {
   const vecLiteral = `[${queryVec.join(",")}]`;

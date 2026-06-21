@@ -71,7 +71,7 @@ export async function refreshEmbeddings(): Promise<{ processed: number; failed: 
   for (const [id, vec] of embeddings) {
     try {
       await prisma.$executeRawUnsafe(
-        `UPDATE components SET embedding = $1::vector, embedding_stale = false WHERE id = $2`,
+        `UPDATE components SET embedding = $1::vector, "embeddingStale" = false WHERE id = $2`,
         `[${vec.join(",")}]`,
         id,
       );
