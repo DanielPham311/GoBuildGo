@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import Providers from "@/components/shared/Providers";
+import Navbar from "@/components/shared/Navbar";
 
 export const metadata: Metadata = {
   title: "gobuildgo — Plan your dream desk setup",
@@ -14,7 +16,12 @@ export default function RootLayout({
 }) {
   return (
     <html lang="vi" suppressHydrationWarning>
-      <body className="min-h-screen font-sans antialiased">{children}</body>
+      <body className="min-h-screen font-sans antialiased">
+        <Providers>
+          <Navbar />
+          {children}
+        </Providers>
+      </body>
     </html>
   );
 }
