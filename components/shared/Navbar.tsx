@@ -62,13 +62,13 @@ export default function Navbar() {
           {status === "unauthenticated" && (
             <div className="flex items-center gap-3">
               <Link href="/signin" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                Đăng nhập
+                Login
               </Link>
               <Link
                 href="/signup"
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-300 hover:bg-primary/95 hover:shadow"
               >
-                Đăng ký
+                Sign up
               </Link>
             </div>
           )}

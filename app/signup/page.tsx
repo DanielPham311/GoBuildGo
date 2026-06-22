@@ -27,7 +27,7 @@ export default function SignUpPage() {
 
     if (!res.ok) {
       const json = await res.json();
-      setError(json?.error?.message ?? "Đăng ký thất bại");
+      setError(json?.error?.message ?? "An error occurred. Please try again.");
       setLoading(false);
       return;
     }
