@@ -1,15 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Laptop, Sparkles, LogOut, User as UserIcon } from "lucide-react";
+import { useLocale } from "next-intl";
+import { Laptop, Sparkles, LogOut, User as UserIcon, Users } from "lucide-react";
+import { localeNames } from "@/i18n/config";
 
 export default function Navbar() {
-  const pathname = usePathname();
+  const router = useRouter();
   const { data: session, status } = useSession();
   const user = session?.user as { name?: string | null; email?: string | null; role?: string } | undefined;
   const isAdmin = user?.role === "admin";
+  const currentLocale = useLocale();
+  const pathname = usePathname();
+
+  function switchLocale(locale: string) {
+    document.cookie = `NEXT_LOCALE=${locale};path=/;max-age=31536000`;
+    router.refresh();
+  }
 
   const linkClass = (href: string) => {
     const isActive = pathname === href;
@@ -28,33 +37,58 @@ export default function Navbar() {
               <Laptop className="h-4 w-4" />
             </span>
             <span className="bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text text-transparent font-extrabold">
-              gobuildgo
+              Go Build Go
             </span>
           </Link>
 
           {/* Navigation Links */}
-          {status === "authenticated" && (
-            <div className="hidden items-center gap-6 md:flex">
-              <Link href="/visualize" className={linkClass("/visualize")}>
-                <span className="flex items-center gap-1.5">
-                  <Sparkles className="h-3.5 w-3.5" />
-                  Visualize
-                </span>
-              </Link>
-              <Link href="/planner" className={linkClass("/planner")}>
-                Planner
-              </Link>
-              {isAdmin && (
-                <Link href="/admin" className={linkClass("/admin")}>
-                  Admin
+          <div className="hidden items-center gap-6 md:flex">
+            <Link href="/community" className={linkClass("/community")}>
+              <span className="flex items-center gap-1.5">
+                <Users className="h-3.5 w-3.5" />
+                Community
+              </span>
+            </Link>
+            {status === "authenticated" && (
+              <>
+                <Link href="/visualize" className={linkClass("/visualize")}>
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="h-3.5 w-3.5" />
+                    Visualize
+                  </span>
                 </Link>
-              )}
-            </div>
-          )}
+                <Link href="/planner" className={linkClass("/planner")}>
+                  Planner
+                </Link>
+                {isAdmin && (
+                  <Link href="/admin" className={linkClass("/admin")}>
+                    Admin
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
-        {/* User / Auth Info */}
+        {/* Right side: locale switcher + user */}
         <div className="flex items-center gap-4">
+          {/* Locale Switcher */}
+          <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
+            {Object.entries(localeNames).map(([code, name]) => (
+              <button
+                key={code}
+                onClick={() => switchLocale(code)}
+                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
+                  currentLocale === code
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {code === "vi" ? "🇻🇳" : "🇬🇧"}
+                <span className="hidden sm:inline">{name}</span>
+              </button>
+            ))}
+          </div>
           {status === "loading" && (
             <div className="h-4 w-8 animate-pulse rounded bg-muted" />
           )}

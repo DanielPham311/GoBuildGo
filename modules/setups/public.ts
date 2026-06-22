@@ -9,9 +9,10 @@ export type PublicSetup = {
   totalPrice: number | null;
   coverImageUrl: string | null;
   viewCount: number;
+  items: unknown[];
 };
 
-export function toPublicSetup(s: Setup): PublicSetup {
+export function toPublicSetup(s: Setup & { items?: unknown[] }): PublicSetup {
   return {
     id: s.id,
     name: s.name,
@@ -21,5 +22,6 @@ export function toPublicSetup(s: Setup): PublicSetup {
     totalPrice: s.totalPrice ? Number(s.totalPrice) : null,
     coverImageUrl: s.coverImageUrl,
     viewCount: s.viewCount,
+    items: s.items ?? [],
   };
 }

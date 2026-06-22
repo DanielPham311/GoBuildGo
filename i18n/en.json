@@ -1,0 +1,92 @@
+{
+  "common": {
+    "appName": "gobuildgo",
+    "loading": "Loading...",
+    "error": "Something went wrong",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "share": "Share",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "viewAll": "View All"
+  },
+  "nav": {
+    "home": "Home",
+    "community": "Community",
+    "visualize": "Visualize",
+    "planner": "Planner",
+    "admin": "Admin",
+    "login": "Log in",
+    "signup": "Sign up",
+    "logout": "Log out"
+  },
+  "home": {
+    "heroTagline": "Interactive Setup Planner for Vietnam",
+    "heroTitle": "Build Your Dream",
+    "heroHighlight": "Desk Workspace",
+    "heroSubtext": "Plan your layout in 2D, balance your budget in VND, optimize color harmony, and shop the cheapest deals across Shopee, Lazada, and Tiki.",
+    "startPlanning": "Start Planning",
+    "tryVisualizer": "Try AI Visualizer",
+    "featureLayout": "2D Layout Design",
+    "featureLayoutDesc": "Set custom room dimensions. Position desks, chairs, monitors, and decor interactively on our drag-and-drop canvas.",
+    "featureStyle": "Style & Color Harmony",
+    "featureStyleDesc": "Get real-time style scores. Let our engine evaluate how consistent your setup is with Minimalist, RGB, or wood aesthetics.",
+    "featurePrice": "Smart Price Alerts",
+    "featurePriceDesc": "Compare actual listings in Vietnam. Save money with auto-updates and affiliate deals mapped directly to your parts list.",
+    "themesTitle": "Curated Themes for Inspiration",
+    "themesSubtext": "Select a theme to auto-fill your planner layout instantly.",
+    "useTheme": "Use Theme",
+    "viewAllSetups": "View All Setups"
+  },
+  "community": {
+    "title": "Community Gallery",
+    "description": "Browse {count} desk setups shared by the community. Get inspired and make it yours.",
+    "noSetups": "No public setups yet.",
+    "noSetupsSubtext": "Be the first to share your setup!",
+    "createSetup": "Create a Setup",
+    "newest": "Newest",
+    "popular": "Most Popular",
+    "filters": "Filters",
+    "clearFilters": "Clear"
+  },
+  "planner": {
+    "title": "Planner",
+    "save": "Save Setup",
+    "saved": "Saved!",
+    "styleScore": "Style Score",
+    "colorHarmony": "Color Harmony",
+    "themeConsistency": "Theme Consistency",
+    "spaceFit": "Space Fit",
+    "budgetBalance": "Budget Balance",
+    "roomSelector": "Choose Your Room",
+    "roomDimensions": "Room Dimensions",
+    "width": "Width",
+    "depth": "Depth",
+    "height": "Height",
+    "budget": "Budget",
+    "totalBudget": "Total: {amount}",
+    "components": "Components",
+    "selectedItems": "Selected Items",
+    "buyAll": "Buy All",
+    "noItems": "No items selected",
+    "addItems": "Browse components to add to your setup"
+  },
+  "visualize": {
+    "title": "AI Room Visualizer",
+    "placeholder": "Describe your dream room...",
+    "generate": "Generate",
+    "generating": "Generating...",
+    "emptyState": "Describe a room and let AI generate a visualization of your setup."
+  },
+  "score": {
+    "overall": "Overall Score",
+    "monochromatic": "Monochromatic",
+    "analogous": "Analogous",
+    "complementary": "Complementary",
+    "triadic": "Triadic",
+    "mixed": "Mixed"
+  }
+}

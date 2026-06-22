@@ -5,6 +5,7 @@ export type BuyOffer = {
   shop: string;
   price: number; // VND
   url: string; // affiliate/shop link
+  affiliateUrl: string; // signed internal redirect URL
 };
 
 export type RetrievedItem = {
