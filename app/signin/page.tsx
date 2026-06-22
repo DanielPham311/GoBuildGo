@@ -21,7 +21,7 @@ export default function SignInPage() {
     const res = await signIn("credentials", { email, password, redirect: false });
 
     if (res?.error) {
-      setError("Email hoặc mật khẩu không chính xác");
+      setError("Incorrect email or password. Please try again.");
       setLoading(false);
     } else {
       router.push("/visualize");

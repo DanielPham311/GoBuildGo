@@ -27,14 +27,14 @@ async function searchSimilar(queryVec: number[], req: VisualizeRequest): Promise
   const vecLiteral = `[${queryVec.join(",")}]`;
 
   // Build WHERE filters alongside the vector search so budget/room are hard constraints.
-  const conditions: string[] = ["c.is_active = true", "c.embedding IS NOT NULL"];
+  const conditions: string[] = ['c."isActive" = true', "c.embedding IS NOT NULL"];
   const params: unknown[] = [vecLiteral];
 
   if (req.maxPrice) {
     params.push(req.maxPrice);
     conditions.push(`EXISTS (
       SELECT 1 FROM prices p
-      WHERE p.component_id = c.id AND p.is_available = true AND p.price <= $${params.length}
+      WHERE p."componentId" = c.id AND p."isAvailable" = true AND p.price <= $${params.length}
     )`);
   }
 
@@ -49,13 +49,13 @@ async function searchSimilar(queryVec: number[], req: VisualizeRequest): Promise
       name: string;
       description: string | null;
       colors: string[];
-      style_tags: string[];
-      image_url: string | null;
+      styleTags: string[];
+      imageUrl: string | null;
       similarity: number;
     }[]
   >(
     `SELECT c.id, c.category, c.brand, c.name, c.description,
-            c.colors, c.style_tags, c.image_url,
+            c.colors, c."styleTags", c."imageUrl",
             1 - (c.embedding <=> $1::vector) AS similarity
      FROM components c
      WHERE ${conditions.join(" AND ")}
@@ -71,8 +71,8 @@ async function searchSimilar(queryVec: number[], req: VisualizeRequest): Promise
     name: r.name,
     description: r.description,
     colors: r.colors,
-    styleTags: r.style_tags,
-    imageUrl: r.image_url,
+    styleTags: r.styleTags,
+    imageUrl: r.imageUrl,
     similarity: Number(r.similarity),
     offer: null as RetrievedItem["offer"],
   }));

@@ -39,7 +39,7 @@ export async function findDuplicate(
   >(
     `SELECT c.id, 1 - (c.embedding <=> $1::vector) AS similarity
      FROM components c
-     WHERE c.is_active = true
+     WHERE c."isActive" = true
        AND c.embedding IS NOT NULL
        AND c.category = $2
      ORDER BY c.embedding <=> $1::vector
