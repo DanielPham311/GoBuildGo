@@ -4,6 +4,7 @@ export type SearchOffer = {
   shop: string;
   price: number; // VND
   url: string;
+  affiliateUrl: string; // signed internal redirect URL
 };
 
 export type SearchResultItem = {
