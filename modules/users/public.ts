@@ -11,6 +11,8 @@ export function toPublicProfile(u: UserWithCounts) {
     name: u.name,
     email: u.email,
     image: u.image,
+    bio: u.bio,
+    location: u.location,
     role: u.role,
     setupCount: u._count.setups,
     favoriteCount: u._count.favorites,

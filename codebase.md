@@ -1,6 +1,6 @@
 # gobuildgo Codebase Reference
 
-> Last updated: 2026-06-23 (post-merge PR #12 — prices + users modules, full setups CRUD)
+> Last updated: 2026-06-23 (profile page + avatar upload, theme gallery, user dashboard)
 
 ## Project Overview
 
@@ -102,7 +102,7 @@ gobuildgo/
 
 | Model | Status | Notes |
 |---|---|---|
-| User | ✅ Active | role (user/admin), authProvider, passwordHash |
+| User | ✅ Active | role (user/admin), authProvider, passwordHash, bio, location |
 | Component | ✅ Active | + embedding vector(1024), embeddingStale |
 | Price | ✅ Active | @@unique([componentId, shop, condition]) |
 | PriceHistory | ✅ Active | Tracks price changes on upsert |
@@ -140,7 +140,8 @@ gobuildgo/
 | GET | /api/v1/prices/affiliate | prices | Public | Verify HMAC → 302 redirect to shop |
 | GET | /api/v1/search | search | Public | RAG vector search (diversified) |
 | GET | /api/v1/users/me | users | requireUser | Current user profile |
-| PATCH | /api/v1/users/me | users | requireUser | Update profile (name, image) |
+| PATCH | /api/v1/users/me | users | requireUser | Update profile (name, image, bio, location) |
+| POST | /api/v1/users/me/avatar | users | requireUser | Upload avatar image → sets image URL |
 | GET | /api/v1/users/me/setups | users | requireUser | User's saved setups |
 | GET | /api/v1/users/me/favorites | users | requireUser | Favorited components (paginated) |
 | POST/PUT/DELETE | /api/v1/users/me/favorites/[componentId] | users | requireUser | Toggle/add/remove favorite |

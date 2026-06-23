@@ -26,6 +26,8 @@ export async function updateProfile(userId: string, input: UpdateProfileInput) {
   const data: Prisma.UserUpdateInput = {};
   if (input.name !== undefined) data.name = input.name;
   if (input.image !== undefined) data.image = input.image;
+  if (input.bio !== undefined) data.bio = input.bio;
+  if (input.location !== undefined) data.location = input.location;
   const user = await prisma.user.update({
     where: { id: userId },
     data,

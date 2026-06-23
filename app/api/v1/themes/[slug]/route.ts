@@ -10,6 +10,9 @@ export async function GET(_req: Request, { params }: { params: { slug: string } 
 
   return NextResponse.json({
     ...toPublicTheme(theme),
-    components: theme.components.map((tc) => toPublicComponent(tc.component)),
+    components: theme.components.map((tc) => ({
+      ...toPublicComponent(tc.component),
+      lowestPrice: tc.component.prices[0]?.price != null ? Number(tc.component.prices[0].price) : null,
+    })),
   });
 }

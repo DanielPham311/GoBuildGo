@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useLocale } from "next-intl";
-import { Laptop, Sparkles, LogOut, User as UserIcon, Users } from "lucide-react";
+import { Laptop, Sparkles, LogOut, User as UserIcon, Users, Palette, LayoutDashboard } from "lucide-react";
 import { localeNames } from "@/i18n/config";
 
 export default function Navbar() {
@@ -49,6 +49,12 @@ export default function Navbar() {
                 Community
               </span>
             </Link>
+            <Link href="/themes" className={linkClass("/themes")}>
+              <span className="flex items-center gap-1.5">
+                <Palette className="h-3.5 w-3.5" />
+                Themes
+              </span>
+            </Link>
             {status === "authenticated" && (
               <>
                 <Link href="/visualize" className={linkClass("/visualize")}>
@@ -59,6 +65,12 @@ export default function Navbar() {
                 </Link>
                 <Link href="/planner" className={linkClass("/planner")}>
                   Planner
+                </Link>
+                <Link href="/dashboard" className={linkClass("/dashboard")}>
+                  <span className="flex items-center gap-1.5">
+                    <LayoutDashboard className="h-3.5 w-3.5" />
+                    Dashboard
+                  </span>
                 </Link>
                 {isAdmin && (
                   <Link href="/admin" className={linkClass("/admin")}>
@@ -109,7 +121,10 @@ export default function Navbar() {
 
           {status === "authenticated" && user && (
             <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1.5 text-xs font-medium text-foreground">
+              <Link
+                href="/dashboard"
+                className="flex items-center gap-2 rounded-full border bg-muted/40 px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted transition-colors"
+              >
                 <UserIcon className="h-3.5 w-3.5 text-muted-foreground" />
                 <span className="max-w-[120px] truncate">{user.name ?? user.email}</span>
                 {isAdmin && (
@@ -117,7 +132,7 @@ export default function Navbar() {
                     admin
                   </span>
                 )}
-              </div>
+              </Link>
               <button
                 onClick={() => signOut({ callbackUrl: "/" })}
                 className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-destructive"

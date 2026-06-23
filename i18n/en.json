@@ -18,6 +18,8 @@
     "community": "Community",
     "visualize": "Visualize",
     "planner": "Planner",
+    "themes": "Themes",
+    "dashboard": "Dashboard",
     "admin": "Admin",
     "login": "Log in",
     "signup": "Sign up",
@@ -88,5 +90,33 @@
     "complementary": "Complementary",
     "triadic": "Triadic",
     "mixed": "Mixed"
+  },
+  "themes": {
+    "title": "Theme Gallery",
+    "description": "Choose a curated theme to inspire your next setup.",
+    "featured": "Featured",
+    "viewTheme": "View Theme",
+    "colorPalette": "Color Palette",
+    "styleTags": "Style Tags"
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "profile": "Profile",
+    "favorites": "Favorites",
+    "settings": "Settings",
+    "myStats": "My Stats",
+    "setupCount": "Setups",
+    "favoriteCount": "Favorites",
+    "likeCount": "Likes",
+    "editProfile": "Edit Profile",
+    "saveChanges": "Save Changes",
+    "saved": "Saved!",
+    "noFavorites": "No favorites yet.",
+    "noFavoritesSubtext": "Browse components and click the heart icon to save them.",
+    "browseComponents": "Browse Components",
+    "emailSettings": "Email Settings",
+    "priceAlerts": "Price Alerts",
+    "weeklyDigest": "Weekly Digest",
+    "promotions": "Promotions"
   }
 }

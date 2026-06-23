@@ -19,14 +19,18 @@ export async function listThemes(query: ListThemesQuery) {
   return { items, total };
 }
 
-/** Theme with its recommended components, by slug. */
+/** Theme with its recommended components (including cheapest price), by slug. */
 export async function getThemeBySlug(slug: string) {
   return prisma.theme.findUnique({
     where: { slug },
     include: {
       components: {
         orderBy: { sortOrder: "asc" },
-        include: { component: true },
+        include: {
+          component: {
+            include: { prices: { orderBy: { price: "asc" }, take: 1 } },
+          },
+        },
       },
     },
   });

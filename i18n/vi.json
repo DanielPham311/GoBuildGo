@@ -18,6 +18,8 @@
     "community": "Cộng đồng",
     "visualize": "Hình ảnh AI",
     "planner": "Thiết kế",
+    "themes": "Phong cách",
+    "dashboard": "Bảng điều khiển",
     "admin": "Quản trị",
     "login": "Đăng nhập",
     "signup": "Đăng ký",
@@ -88,5 +90,33 @@
     "complementary": "Bổ sung",
     "triadic": "Tam giác",
     "mixed": "Hỗn hợp"
+  },
+  "themes": {
+    "title": "Thư viện Phong cách",
+    "description": "Chọn một phong cách được chọn lọc để truyền cảm hứng cho setup tiếp theo của bạn.",
+    "featured": "Nổi bật",
+    "viewTheme": "Xem Phong cách",
+    "colorPalette": "Bảng màu",
+    "styleTags": "Thẻ phong cách"
+  },
+  "dashboard": {
+    "title": "Bảng điều khiển",
+    "profile": "Hồ sơ",
+    "favorites": "Yêu thích",
+    "settings": "Cài đặt",
+    "myStats": "Số liệu của tôi",
+    "setupCount": "Setup",
+    "favoriteCount": "Yêu thích",
+    "likeCount": "Lượt thích",
+    "editProfile": "Sửa Hồ sơ",
+    "saveChanges": "Lưu Thay đổi",
+    "saved": "Đã lưu!",
+    "noFavorites": "Chưa có yêu thích.",
+    "noFavoritesSubtext": "Duyệt linh kiện và nhấn biểu tượng trái tim để lưu.",
+    "browseComponents": "Duyệt Linh kiện",
+    "emailSettings": "Cài đặt Email",
+    "priceAlerts": "Cảnh báo Giá",
+    "weeklyDigest": "Tóm tắt Tuần",
+    "promotions": "Khuyến mãi"
   }
 }
