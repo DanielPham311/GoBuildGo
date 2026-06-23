@@ -1,6 +1,7 @@
 import { prisma } from "@/shared/db";
 import { embedText, generateRoomImage } from "@/shared/ai";
 import crypto from "node:crypto";
+import { buildAffiliateUrl } from "@/modules/affiliate";
 import type { VisualizeRequest } from "./schema";
 import type { RetrievedItem, VisualizeResult } from "./public";
 
@@ -99,7 +100,17 @@ async function attachOffers(items: RetrievedItem[]): Promise<void> {
     }
   }
   for (const item of items) {
-    item.offer = cheapest.get(item.id) ?? null;
+    const offer = cheapest.get(item.id);
+    if (offer) {
+      item.offer = {
+        shop: offer.shop,
+        price: offer.price,
+        url: offer.url,
+        affiliateUrl: buildAffiliateUrl(offer.url, item.id),
+      };
+    } else {
+      item.offer = null;
+    }
   }
 }
 

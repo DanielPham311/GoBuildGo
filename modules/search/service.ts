@@ -1,6 +1,7 @@
 import { prisma } from "@/shared/db";
 import { embedText } from "@/shared/ai";
 import { COMPONENT_CATEGORIES } from "@/lib/constants";
+import { buildAffiliateUrl } from "@/modules/affiliate";
 import type { SearchQuery } from "./schema";
 import type { SearchResultItem } from "./public";
 
@@ -145,7 +146,17 @@ async function attachOffers(items: SearchResultItem[]): Promise<void> {
   }
 
   for (const item of items) {
-    item.offer = cheapest.get(item.id) ?? null;
+    const offer = cheapest.get(item.id);
+    if (offer) {
+      item.offer = {
+        shop: offer.shop,
+        price: offer.price,
+        url: offer.url,
+        affiliateUrl: buildAffiliateUrl(offer.url, item.id),
+      };
+    } else {
+      item.offer = null;
+    }
   }
 }
 

@@ -1,0 +1,92 @@
+{
+  "common": {
+    "appName": "GoBuildGo",
+    "loading": "Đang tải...",
+    "error": "Đã xảy ra lỗi",
+    "save": "Lưu",
+    "cancel": "Hủy",
+    "delete": "Xóa",
+    "edit": "Sửa",
+    "share": "Chia sẻ",
+    "back": "Quay lại",
+    "next": "Tiếp theo",
+    "previous": "Trước đó",
+    "viewAll": "Xem tất cả"
+  },
+  "nav": {
+    "home": "Trang chủ",
+    "community": "Cộng đồng",
+    "visualize": "Hình ảnh AI",
+    "planner": "Thiết kế",
+    "admin": "Quản trị",
+    "login": "Đăng nhập",
+    "signup": "Đăng ký",
+    "logout": "Đăng xuất"
+  },
+  "home": {
+    "heroTagline": "Trình thiết kế Setup Cho Việt Nam",
+    "heroTitle": "Xây dựng không gian làm việc",
+    "heroHighlight": "trong mơ của bạn",
+    "heroSubtext": "Thiết kế bố cục 2D, cân ngân sách bằng VND, tối ưu hòa màu sắc và mua sắm giá rẻ nhất trên Shopee, Lazada và Tiki.",
+    "startPlanning": "Bắt đầu thiết kế",
+    "tryVisualizer": "ử dụng AI hình ảnh",
+    "featureLayout": "Thiết kế bố cục 2D",
+    "featureLayoutDesc": "Thiết lập kích thước phòng tùy chỉnh. Đặt bàn, ghế, màn hình và trang trí tương tác trên canvas kéo-thả.",
+    "featureStyle": "Phong cách & Hòa màu sắc",
+    "featureStyleDesc": "Nhận điểm phong cách theo thời gian thực. Để engine của chúng tôi đánh giá sự phù hợp với phong cách Tối giản, RGB hoặc gỗ.",
+    "featurePrice": "Cảnh báo giá thông minh",
+    "featurePriceDesc": "So sách giá thực trên thị trường Việt Nam. Tiết kiệm với cập nhật tự động và ưu đãi liên kết trực tiếp.",
+    "themesTitle": "Phong cách được chọn lọc để truyền cảm hứng",
+    "themesSubtext": "Chọn một phong cách để tự động điền bố cục planner của bạn.",
+    "useTheme": "Sử dụng phong cách",
+    "viewAllSetups": "Xem tất cả setup"
+  },
+  "community": {
+    "title": "Thư viện Cộng đồng",
+    "description": "Duyệt {count} setup bàn làm việc được chia sẻ bởi cộng đồng. Lấy cảm hứng và biến nó thành của bạn.",
+    "noSetups": "Chưa có setup công khai.",
+    "noSetupsSubtext": "Hãy là người đầu tiên chia sẻ setup của bạn!",
+    "createSetup": "Tạo Setup",
+    "newest": "Mới nhất",
+    "popular": "Phổ biến nhất",
+    "filters": "Bộ lọc",
+    "clearFilters": "Xóa"
+  },
+  "planner": {
+    "title": "Thiết kế",
+    "save": "Lưu Setup",
+    "saved": "Đã lưu!",
+    "styleScore": "Điểm Phong cách",
+    "colorHarmony": "Hòa màu sắc",
+    "themeConsistency": "Nhất quán Phong cách",
+    "spaceFit": "Phù hợp Không gian",
+    "budgetBalance": "Cân bằng Ngân sách",
+    "roomSelector": "Chọn Loại Phòng",
+    "roomDimensions": "Kích Thước Phòng",
+    "width": "Chiều rộng",
+    "depth": "Chiều sâu",
+    "height": "Chiều cao",
+    "budget": "Ngân sách",
+    "totalBudget": "Tổng: {amount}",
+    "components": "Linh kiện",
+    "selectedItems": "Đã Chọn",
+    "buyAll": "Mua tất cả",
+    "noItems": "Chưa chọn linh kiện",
+    "addItems": "Duyệt linh kiện để thêm vào setup của bạn"
+  },
+  "visualize": {
+    "title": "AI Hình ảnh Phòng",
+    "placeholder": "Mô tả phòng trong mơ của bạn...",
+    "generate": "Tạo ảnh",
+    "generating": "Đang tạo...",
+    "emptyState": "Mô tả một căn phòng và để AI tạo hình ảnh cho setup của bạn."
+  },
+  "score": {
+    "overall": "Điểm Tổng Thể",
+    "monochromatic": "Đơn sắc",
+    "analogous": "Tương đồng",
+    "complementary": "Bổ sung",
+    "triadic": "Tam giác",
+    "mixed": "Hỗn hợp"
+  }
+}

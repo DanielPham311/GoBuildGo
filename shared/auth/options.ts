@@ -39,12 +39,46 @@ export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
     async jwt({ token, user }) {
-      if (user) token.role = (user as { role?: string }).role;
+      // On initial sign-in, fetch role from DB
+      if (user) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const dbUser = await (prisma.user as any).findUnique({
+          where: { email: user.email! },
+          select: { id: true, role: true },
+        });
+        token.role = dbUser?.role ?? "user";
+        token.sub = dbUser?.id ?? token.sub;
+      }
       return token;
     },
     async session({ session, token }) {
-      if (session.user) (session.user as { role?: string }).role = token.role as string;
+      if (session.user) {
+        (session.user as { role?: string }).role = token.role as string;
+        (session.user as { id?: string }).id = token.sub as string;
+      }
       return session;
+    },
+    async signIn({ user, account }) {
+      // For Google OAuth: auto-create user if not exists
+      if (account?.provider === "google" && user.email) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const existing = await (prisma.user as any).findUnique({
+          where: { email: user.email },
+        });
+        if (!existing) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          await (prisma.user as any).create({
+            data: {
+              email: user.email,
+              name: user.name ?? null,
+              image: user.image ?? null,
+              authProvider: "google",
+              role: "user",
+            },
+          });
+        }
+      }
+      return true;
     },
   },
 };

@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 import Providers from "@/components/shared/Providers";
 import Navbar from "@/components/shared/Navbar";
@@ -9,18 +11,23 @@ export const metadata: Metadata = {
     "Vietnam-focused interactive desk setup planner. Plan, visualize, and shop your dream workspace.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const locale = await getLocale();
+  const messages = await getMessages();
+
   return (
-    <html lang="vi" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className="min-h-screen font-sans antialiased">
-        <Providers>
-          <Navbar />
-          {children}
-        </Providers>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Providers>
+            <Navbar />
+            {children}
+          </Providers>
+        </NextIntlClientProvider>
       </body>
     </html>
   );
