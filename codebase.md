@@ -1,6 +1,6 @@
 # gobuildgo Codebase Reference
 
-> Last updated: 2026-06-23 (profile page + avatar upload, theme gallery, user dashboard)
+> Last updated: 2026-06-23 (PR #14 merged: theme gallery pages + user dashboard/profile/favorites/settings)
 
 ## Project Overview
 
@@ -46,6 +46,11 @@ gobuildgo/
 │   ├── planner/                      # Interactive setup planner ✅
 │   │   └── _components/              # 7 planner components
 │   ├── community/                    # Public setup gallery ✅
+│   ├── themes/                       # Theme gallery list + [slug] detail ✅ (PR #14)
+│   ├── dashboard/                    # User dashboard ✅ (PR #14)
+│   │   ├── profile/                  # Profile edit + avatar ✅
+│   │   ├── favorites/                # Favorited components ✅
+│   │   └── settings/                 # Email/notification settings ✅
 │   ├── signin/                       # Sign-in page ✅ (credentials + Google)
 │   ├── signup/                       # Registration page ✅ (credentials + Google)
 │   ├── visualize/                    # Visualize page ✅
@@ -83,9 +88,9 @@ gobuildgo/
 │   ├── scraper-run.ts                # ✅ CLI runner
 │   └── scrapers/                     # ✅ Shopee + clean + dedup + types
 ├── prisma/
-│   ├── schema.prisma                 # 16 models
+│   ├── schema.prisma                 # 15 models
 │   ├── seed/                         # ✅ 34 components + 6 themes
-│   └── migrations/                   # 6 migrations
+│   └── migrations/                   # 1 squashed migration (20260622000000_init)
 ├── i18n/
 │   ├── config.ts                     # locales (en, vi), defaultLocale (vi)
 │   ├── en.json                       # English translations
@@ -116,7 +121,8 @@ gobuildgo/
 | AffiliateClick | ✅ Active | Click tracking |
 | UserFavorite | ✅ Active | Component favorites |
 | EmailSubscription | ✅ Active | price_alert, weekly_digest, promotions |
-| RoomTemplate | ✅ Active | |
+| SetupView | ✅ Active | View tracking (ipHash, viewerId) |
+| PromptLog | ✅ Active | Observability: user search/visualize prompts + results (type, prompt, userId, resultCount, itemIds, imageUrl) |
 
 ## API Endpoints
 
@@ -150,20 +156,34 @@ gobuildgo/
 | GET/POST | /api/v1/affiliate/click | affiliate | Public | Signed affiliate redirect |
 | POST | /api/v1/visualize | visualize | Public | RAG → Pollinations room image |
 | GET | /api/v1/admin/scraper/status | admin | Public | Component counts + scraper health |
-| POST | /api/v1/admin/scraper/run | admin | requireUser | Trigger scrape run |
+| POST | /api/v1/admin/scraper/run | admin | requireAdmin | Trigger scrape run |
+| GET | /api/v1/admin/scraper/status | admin | requireAdmin | Component counts + scraper health |
+| GET | /api/v1/admin/stats | admin | requireAdmin | Platform metrics (users, setups, clicks…) |
+| GET | /api/v1/admin/components | admin | requireAdmin | List components (incl. inactive), paginated |
+| POST | /api/v1/admin/components | admin | requireAdmin | Create component |
+| PATCH | /api/v1/admin/components/[id] | admin | requireAdmin | Update component metadata |
+| DELETE | /api/v1/admin/components/[id] | admin | requireAdmin | Delete component (cascades) |
+| GET | /api/v1/admin/reports/clicks | admin | requireAdmin | Most-clicked components + per-shop breakdown |
+| GET | /api/v1/admin/prompts | admin | requireAdmin | Paginated user prompt log (filter by type) |
+| GET | /api/v1/prices/history | prices | Public | Per-shop price history series (F13) |
 
 ### ⚠️ Stubs (501 notImplemented)
 
 | Method | Path | Description |
 |---|---|---|
-| GET/POST | /api/v1/admin/components | Admin component CRUD |
-| PATCH/DELETE | /api/v1/admin/components/[id] | Admin component edit/delete |
-| GET | /api/v1/admin/stats | Dashboard metrics |
 | POST | /api/v1/upload/room | Upload room photo |
 | GET | /api/v1/upload/room/[id]/result | AI analysis result |
 | GET | /api/v1/upload/room/[id]/status | AI analysis status |
+| GET | /api/v1/setups/[id]/export | Export setup (PDF/JSON) |
 
 ## Module Details
+
+### `modules/admin/` ✅
+- **service.ts**: `getDashboardStats()`, `listAdminComponents(query)` (incl. inactive + price count), `createComponent(input)`, `updateComponent(id, input)`, `deleteComponent(id)`, `getAffiliateReport(limit)` (groupBy click counts + per-shop), `listPromptLogs({page,limit,type})`. Editing name/brand/description restages embedding (`embeddingStale: true`).
+- **public.ts**: `toAdminComponent(c)` (exposes `isActive`, `embeddingStale`, `priceCount`), `toAdminPromptLog(p)`
+- **schema.ts**: `listAdminComponentsQuerySchema`, `createComponentSchema`, `updateComponentSchema`, `listPromptLogsQuerySchema`
+- **Error**: `AdminError("NOT_FOUND" | "DUPLICATE_SLUG")` → 404 / 409 via `toErrorResponse`
+- All routes gated by `requireAdmin()`.
 
 ### `modules/prices/` ✅ (new in PR #12)
 - **service.ts**: `getComponentPrices(componentId)`, `getPrice(id)`, `recordAffiliateClick(args)`
@@ -266,10 +286,15 @@ export async function POST(req: NextRequest) {
 | Planner | `/planner` | ✅ 3-panel: room config / SVG visualizer / items + style score |
 | Visualize | `/visualize` | ✅ Form → API → items + generated image |
 | Community | `/community` | ✅ Gallery grid + filters + pagination |
+| Themes | `/themes`, `/themes/[slug]` | ✅ Theme gallery + detail (PR #14) |
+| Dashboard | `/dashboard` (+ profile/favorites/settings) | ✅ User dashboard (PR #14) |
 | Welcome | `/welcome` | ✅ Hero + 6 feature cards + 3-step guide |
 | Sign-in | `/signin` | ✅ Credentials + Google, callbackUrl support |
 | Sign-up | `/signup` | ✅ Credentials + Google, redirects to /welcome |
-| Admin | `/admin` | ✅ Stats + scraper run + health log |
+| Admin | `/admin` | ✅ Stats + scraper run + health log (tabbed nav) |
+| Admin Items | `/admin/items` | ✅ All components, activate/deactivate, delete, search |
+| Admin Reports | `/admin/reports` | ✅ Most-clicked items + per-shop breakdown |
+| Admin Prompts | `/admin/prompts` | ✅ User search/visualize prompt log, filter by type |
 | Navbar | shared | ✅ Sticky, auth-aware, locale switcher (cookie-based) |
 
 ## i18n
@@ -308,16 +333,14 @@ GOOGLE_CLIENT_ID      # NextAuth Google OAuth
 GOOGLE_CLIENT_SECRET  # NextAuth Google OAuth
 ```
 
-## Migrations (6 total)
+## Migrations (2 total)
 
 | Migration | What it does |
 |---|---|
-| `20260620000000_add_embedding` | `CREATE EXTENSION vector` + `embedding vector(768)` + HNSW index |
-| `20260622000842_resize_embedding_to_1536` | Resize to `vector(1536)`, mark stale |
-| `20260622000002_resize_embedding_to_1024` | Resize to `vector(1024)` for Voyage voyage-4 |
-| `20260621000000_add_scraper_health` | `scraper_health` table |
-| `20260621000001_add_generated_render` | `generated_renders` table |
-| (PR #12 migration) | `UserFavorite`, `EmailSubscription`, `AffiliateClick` tables |
+| `20260622000000_init` | Squashed baseline: 15 tables, `CREATE EXTENSION vector`, `embedding vector(1024)` + HNSW index, all enums and indexes |
+| `20260623000000_add_prompt_log` | `PromptType` enum + `prompt_logs` table (user prompt observability) |
+
+> The earlier incremental migrations (add_embedding, resize_*, add_scraper_health, etc.) were squashed into the `init` migration.
 
 ## Feature Implementation Status
 
@@ -332,26 +355,29 @@ GOOGLE_CLIENT_SECRET  # NextAuth Google OAuth
 | F7 | Affiliate links | ✅ Real (HMAC-signed) |
 | F8 | Save/load setups | ✅ Real (full CRUD) |
 | F9 | Public setup gallery | ✅ Real |
-| F10 | Theme gallery page | ❌ Missing (API works, no page) |
+| F10 | Theme gallery page | ✅ Real (PR #14 — `/themes` list + `/themes/[slug]`) |
 | F11 | Vietnamese i18n | ✅ Real |
 | F12 | VND formatting | ✅ Real |
-| F13 | Price history charts | ❌ Missing |
+| F13 | Price history charts | ✅ API (`/prices/history`) + `PriceHistoryChart` component (needs host page) |
 | F14 | Price drop alerts | ❌ Missing |
 | F15 | Community comments | ❌ Missing |
-| F16 | User profiles + dashboard | Partial — APIs real, no dashboard page |
+| F16 | User profiles + dashboard | ✅ Real (PR #14 — `/dashboard` + profile/favorites/settings) |
 | F17 | AI room photo analysis | ❌ Missing |
 | F18 | SEO blog | ❌ Missing |
 | F19 | AdSense | ❌ Missing |
 | F20 | AI build recommendations | ❌ Missing |
 | F21 | 3D visualization | ❌ Missing |
 | F22 | Mobile PWA | ❌ Missing |
-| F23 | Admin panel | Partial — page exists, APIs stubbed |
-| F24 | Affiliate reporting | ❌ Missing |
+| F23 | Admin panel | ✅ Real — stats + component CRUD APIs, all admin routes gated by requireAdmin |
+| F24 | Affiliate reporting | ✅ Real — `/admin/reports` (most-clicked + per-shop) |
+| F25 | Prompt observability | ✅ Real — `PromptLog` + `/admin/prompts` (search & visualize prompts logged fire-and-forget) |
 
 ## Next Steps
 
-1. **F16 dashboard** — User profile/favorites/settings pages (APIs already real)
-2. **F10** — Theme gallery page (APIs already real)
-3. **F13** — Price history charts (PriceHistory model exists)
-4. **F23** — Admin CRUD APIs (page exists, routes stubbed)
+1. ~~Security: requireAdmin() on scraper~~ ✅ Done — all `admin/*` routes now gated.
+2. ~~F23 admin CRUD + stats~~ ✅ Done — `modules/admin` + routes wired into `/admin` page.
+3. **F13 host page** — `PriceHistoryChart` + `/prices/history` API exist; needs a component detail page to render it (no `/components/[id]` page yet).
+4. **F17** — AI room photo analysis (`upload/room/*` routes stubbed 501)
 5. **F15** — Community comments
+6. **Tests** — Vitest + Playwright configured but no tests written yet.
+7. **Tech debt** — Consolidate the two affiliate signing modules (`modules/affiliate/service.ts` old vs `modules/prices/affiliate.ts` canonical).

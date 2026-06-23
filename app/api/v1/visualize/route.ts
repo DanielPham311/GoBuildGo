@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { visualizeRequestSchema, visualize } from "@/modules/visualize";
+import { getCurrentUser } from "@/shared/auth/helpers";
 import { jsonError } from "@/shared/api/response";
 import { NextResponse } from "next/server";
 
@@ -23,7 +24,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const result = await visualize(parsed.data);
+    const user = await getCurrentUser();
+    const result = await visualize(parsed.data, user?.id);
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Visualization failed";

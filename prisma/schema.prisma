@@ -54,6 +54,11 @@ enum UserRole {
   admin
 }
 
+enum PromptType {
+  search
+  visualize
+}
+
 model User {
   id             String    @id @default(cuid())
   email          String?   @unique
@@ -72,6 +77,7 @@ model User {
   setupLikes      SetupLike[]
   setupViews      SetupView[]
   subscriptions   EmailSubscription[]
+  promptLogs      PromptLog[]
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -237,6 +243,23 @@ model GeneratedRender {
   createdAt   DateTime @default(now())
 
   @@map("generated_renders")
+}
+
+// Observability log of user prompts (RAG search + visualize) and their results.
+model PromptLog {
+  id          String     @id @default(cuid())
+  type        PromptType
+  prompt      String     @db.Text
+  userId      String?
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  resultCount Int        @default(0)
+  itemIds     String[]   @default([])
+  imageUrl    String? // set for visualize prompts that produced an image
+  createdAt   DateTime   @default(now())
+
+  @@index([type, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("prompt_logs")
 }
 
 model AffiliateClick {

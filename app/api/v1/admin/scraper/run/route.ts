@@ -5,6 +5,8 @@ import { findDuplicate } from "@/scripts/scrapers/dedup";
 import { prisma } from "@/shared/db";
 import { slugify } from "@/lib/utils";
 import { jsonError } from "@/shared/api/response";
+import { toErrorResponse } from "@/shared/api/handle";
+import { requireAdmin } from "@/shared/auth/helpers";
 import { NextResponse } from "next/server";
 
 async function upsertPriceWithHistory(
@@ -65,7 +67,11 @@ async function upsertPriceWithHistory(
 
 // POST /api/v1/admin/scraper/run — trigger a scrape run (API_DESIGN.md §10).
 export async function POST(req: NextRequest) {
-  // TODO: add admin auth check (requireAdmin).
+  try {
+    await requireAdmin();
+  } catch (err) {
+    return toErrorResponse(err);
+  }
 
   let body: unknown;
   try {

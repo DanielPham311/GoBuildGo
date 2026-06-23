@@ -1,14 +1,14 @@
 import { NextResponse } from "next/server";
-import { getDashboardStats } from "@/modules/admin";
+import { getAffiliateReport } from "@/modules/admin";
 import { requireAdmin } from "@/shared/auth/helpers";
 import { toErrorResponse } from "@/shared/api/handle";
 
-// GET /api/v1/admin/stats — dashboard metrics (API_DESIGN.md §10).
+// GET /api/v1/admin/reports/clicks — most-clicked components + per-shop breakdown (F24).
 export async function GET() {
   try {
     await requireAdmin();
-    const stats = await getDashboardStats();
-    return NextResponse.json(stats);
+    const report = await getAffiliateReport();
+    return NextResponse.json(report);
   } catch (err) {
     return toErrorResponse(err);
   }
