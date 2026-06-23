@@ -1,64 +1,58 @@
-import type { NextRequest } from "next/server";
-import { getSetupById, updateSetup, deleteSetup, incrementView } from "@/modules/setups";
-import { requireUser, AuthError } from "@/shared/auth/helpers";
-import { updateSetupSchema } from "@/modules/setups/schema";
+import { NextResponse, type NextRequest } from "next/server";
+import {
+  getSetup,
+  isLikedBy,
+  updateSetup,
+  deleteSetup,
+  updateSetupSchema,
+  toSetupDetail,
+} from "@/modules/setups";
+import { getCurrentUser, requireUser } from "@/shared/auth/helpers";
+import { writeAuditLog } from "@/shared/audit-log/service";
 import { jsonError } from "@/shared/api/response";
+import { toErrorResponse } from "@/shared/api/handle";
 
 type Ctx = { params: { id: string } };
 
 // GET /api/v1/setups/[id] — setup detail (API_DESIGN.md §5).
 export async function GET(_req: NextRequest, { params }: Ctx) {
-  const setup = await getSetupById(params.id);
-  if (!setup) return jsonError("NOT_FOUND", "Setup not found");
-
-  // Increment view counter (fire-and-forget)
-  incrementView(params.id).catch(() => {});
-
-  return Response.json(setup);
+  try {
+    const user = await getCurrentUser();
+    const setup = await getSetup(params.id, user?.id);
+    const liked = await isLikedBy(setup.id, user?.id);
+    return NextResponse.json(toSetupDetail(setup, liked));
+  } catch (err) {
+    return toErrorResponse(err);
+  }
 }
 
 // PATCH /api/v1/setups/[id] — update setup (owner only).
 export async function PATCH(req: NextRequest, { params }: Ctx) {
-  let user;
   try {
-    user = await requireUser();
-  } catch {
-    return jsonError("UNAUTHENTICATED", "Authentication required");
+    const user = await requireUser();
+    let body: unknown;
+    try {
+      body = await req.json();
+    } catch {
+      return jsonError("VALIDATION_ERROR", "Invalid JSON");
+    }
+    const input = updateSetupSchema.parse(body);
+    const setup = await updateSetup(params.id, user.id!, input);
+    await writeAuditLog({ actorId: user.id!, action: "setup.update", targetId: setup.id });
+    return NextResponse.json(toSetupDetail(setup));
+  } catch (err) {
+    return toErrorResponse(err);
   }
-
-  let body: unknown;
-  try {
-    body = await req.json();
-  } catch {
-    return jsonError("VALIDATION_ERROR", "Invalid JSON body");
-  }
-
-  const parsed = updateSetupSchema.safeParse(body);
-  if (!parsed.success) {
-    const details = parsed.error.issues.map((i) => ({
-      field: i.path.join("."),
-      message: i.message,
-    }));
-    return jsonError("VALIDATION_ERROR", "Validation failed", details);
-  }
-
-  const updated = await updateSetup(params.id, user.id!, parsed.data);
-  if (!updated) return jsonError("NOT_FOUND", "Setup not found or not owner");
-
-  return Response.json(updated);
 }
 
 // DELETE /api/v1/setups/[id] — delete setup (owner only).
 export async function DELETE(_req: NextRequest, { params }: Ctx) {
-  let user;
   try {
-    user = await requireUser();
-  } catch {
-    return jsonError("UNAUTHENTICATED", "Authentication required");
+    const user = await requireUser();
+    await deleteSetup(params.id, user.id!);
+    await writeAuditLog({ actorId: user.id!, action: "setup.delete", targetId: params.id });
+    return NextResponse.json({ message: "Setup deleted successfully", id: params.id });
+  } catch (err) {
+    return toErrorResponse(err);
   }
-
-  const deleted = await deleteSetup(params.id, user.id!);
-  if (!deleted) return jsonError("NOT_FOUND", "Setup not found or not owner");
-
-  return new Response(null, { status: 204 });
 }
