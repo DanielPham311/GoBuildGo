@@ -38,6 +38,9 @@ export async function PATCH(req: NextRequest, { params }: Ctx) {
     }
     const input = updateSetupSchema.parse(body);
     const setup = await updateSetup(params.id, user.id!, input);
+    if (!setup) {
+      return jsonError("NOT_FOUND", "Setup not found");
+    }
     await writeAuditLog({ actorId: user.id!, action: "setup.update", targetId: setup.id });
     return NextResponse.json(toSetupDetail(setup));
   } catch (err) {

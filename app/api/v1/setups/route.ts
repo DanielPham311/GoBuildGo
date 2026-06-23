@@ -45,7 +45,7 @@ export async function POST(req: NextRequest) {
     const input = createSetupSchema.parse(body);
     const setup = await createSetup(user.id!, input);
     await writeAuditLog({ actorId: user.id!, action: "setup.create", targetId: setup.id });
-    return NextResponse.json(toSetupDetail(setup), { status: 201 });
+    return NextResponse.json(toSetupDetail(setup as any), { status: 201 });
   } catch (err) {
     return toErrorResponse(err);
   }
