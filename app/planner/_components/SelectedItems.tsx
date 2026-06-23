@@ -45,7 +45,7 @@ export function SelectedItems({ onAddClick }: Props) {
       {items.length === 0 ? (
         <div className="rounded-xl border border-dashed border-border/60 bg-background/20 p-8 text-center">
           <p className="text-xs text-muted-foreground">
-            No items selected yet. Click "+ Add Item" or select a category to start building.
+            No items selected yet. Click &quot;+ Add Item&quot; or select a category to start building.
           </p>
         </div>
       ) : (

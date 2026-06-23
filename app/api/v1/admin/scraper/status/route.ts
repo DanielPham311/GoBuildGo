@@ -1,8 +1,16 @@
 import { prisma } from "@/shared/db";
+import { requireAdmin } from "@/shared/auth/helpers";
+import { toErrorResponse } from "@/shared/api/handle";
 import { NextResponse } from "next/server";
 
 // GET /api/v1/admin/scraper/status — component + price counts + scraper health (API_DESIGN.md §10).
 export async function GET() {
+  try {
+    await requireAdmin();
+  } catch (err) {
+    return toErrorResponse(err);
+  }
+
   const [componentCount, priceCount, staleCount, health] = await Promise.all([
     prisma.component.count(),
     prisma.price.count(),

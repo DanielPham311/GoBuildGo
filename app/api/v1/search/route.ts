@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { searchQuerySchema, searchComponents } from "@/modules/search";
+import { getCurrentUser } from "@/shared/auth/helpers";
 import { jsonError } from "@/shared/api/response";
 import { NextResponse } from "next/server";
 
@@ -18,7 +19,8 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const result = await searchComponents(parsed.data);
+    const user = await getCurrentUser();
+    const result = await searchComponents(parsed.data, user?.id);
     return NextResponse.json(result);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Search failed";

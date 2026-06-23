@@ -129,7 +129,7 @@ function buildPrompt(req: VisualizeRequest, items: RetrievedItem[]): string {
 }
 
 /** Full flow: embed query → vector search → check cache → generate or return cached image. */
-export async function visualize(req: VisualizeRequest): Promise<VisualizeResult> {
+export async function visualize(req: VisualizeRequest, userId?: string): Promise<VisualizeResult> {
   const queryVec = await embedText(req.query);
   const items = await searchSimilar(queryVec, req);
 
@@ -164,6 +164,20 @@ export async function visualize(req: VisualizeRequest): Promise<VisualizeResult>
         });
     }
   }
+
+  // Observability log (fire-and-forget — non-critical).
+  prisma.promptLog
+    .create({
+      data: {
+        type: "visualize",
+        prompt: req.query,
+        userId: userId ?? null,
+        resultCount: items.length,
+        itemIds: items.map((i) => i.id),
+        imageUrl: image,
+      },
+    })
+    .catch(() => {});
 
   return { query: req.query, items, image };
 }

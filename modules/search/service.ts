@@ -161,10 +161,24 @@ async function attachOffers(items: SearchResultItem[]): Promise<void> {
 }
 
 /** Full RAG retrieval flow: embed query → vector search → diversify → attach offers. */
-export async function searchComponents(query: SearchQuery) {
+export async function searchComponents(query: SearchQuery, userId?: string) {
   const queryVec = await embedText(query.q);
   const rawItems = await searchSimilar(queryVec, query);
   const items = diversify(rawItems, query.topK);
   await attachOffers(items);
+
+  // Observability log (fire-and-forget — non-critical).
+  prisma.promptLog
+    .create({
+      data: {
+        type: "search",
+        prompt: query.q,
+        userId: userId ?? null,
+        resultCount: items.length,
+        itemIds: items.map((i) => i.id),
+      },
+    })
+    .catch(() => {});
+
   return { query: query.q, items };
 }

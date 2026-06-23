@@ -9,6 +9,26 @@ function discountPct(price: Price): number {
   return Math.round(((orig - cur) / orig) * 100);
 }
 
+type ShopHistory = {
+  shop: string;
+  shopName: string | null;
+  currentPrice: number;
+  points: { price: number; at: Date }[];
+};
+
+/** Price-history response: one series per shop, points sorted oldest → newest. */
+export function toPriceHistory(componentId: string, series: ShopHistory[]) {
+  return {
+    componentId,
+    series: series.map((s) => ({
+      shop: s.shop,
+      shopName: s.shopName,
+      currentPrice: s.currentPrice,
+      points: s.points.map((pt) => ({ price: pt.price, at: pt.at.toISOString() })),
+    })),
+  };
+}
+
 /** Price-comparison response for a component (API_DESIGN.md §7). */
 export function toPriceComparison(component: Component & { prices: Price[] }) {
   const prices = component.prices.map((p) => ({

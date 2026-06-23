@@ -30,8 +30,20 @@ type RunResult = {
   durationMs: number;
 };
 
+type StatsData = {
+  users: number;
+  components: number;
+  activeComponents: number;
+  setups: number;
+  publicSetups: number;
+  prices: number;
+  staleEmbeddings: number;
+  affiliateClicks: number;
+};
+
 export default function AdminPage() {
   const [status, setStatus] = useState<StatusData | null>(null);
+  const [stats, setStats] = useState<StatsData | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
   const [running, setRunning] = useState(false);
   const [runResult, setRunResult] = useState<RunResult | null>(null);
@@ -40,8 +52,12 @@ export default function AdminPage() {
   const fetchStatus = useCallback(async () => {
     setStatusLoading(true);
     try {
-      const res = await fetch("/api/v1/admin/scraper/status");
-      if (res.ok) setStatus(await res.json());
+      const [statusRes, statsRes] = await Promise.all([
+        fetch("/api/v1/admin/scraper/status"),
+        fetch("/api/v1/admin/stats"),
+      ]);
+      if (statusRes.ok) setStatus(await statusRes.json());
+      if (statsRes.ok) setStats(await statsRes.json());
     } finally {
       setStatusLoading(false);
     }
@@ -88,6 +104,35 @@ export default function AdminPage() {
           Refresh
         </button>
       </div>
+
+      {/* Platform Overview */}
+      <section className="space-y-4">
+        <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <Activity className="h-4 w-4" />
+          Platform Overview
+        </h2>
+        {statusLoading ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-24 w-full animate-pulse rounded-2xl bg-muted/40 border border-border/30" />
+            ))}
+          </div>
+        ) : stats ? (
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {[
+              { label: "Users", value: stats.users },
+              { label: "Setups", value: stats.setups },
+              { label: "Public Setups", value: stats.publicSetups },
+              { label: "Affiliate Clicks", value: stats.affiliateClicks },
+            ].map((s) => (
+              <div key={s.label} className="rounded-2xl border border-border/40 bg-card/45 p-5 shadow-sm backdrop-blur-md">
+                <p className="text-3xl font-extrabold tracking-tight text-foreground">{s.value.toLocaleString()}</p>
+                <p className="text-xs font-semibold text-muted-foreground mt-1">{s.label}</p>
+              </div>
+            ))}
+          </div>
+        ) : null}
+      </section>
 
       {/* Stats Cards */}
       <section className="space-y-4">

@@ -3,6 +3,7 @@ import { AuthError } from "@/shared/auth/helpers";
 import { SetupError } from "@/modules/setups/service";
 import { UserError } from "@/modules/users/service";
 import { PriceError } from "@/modules/prices/service";
+import { AdminError } from "@/modules/admin/service";
 import { jsonError, type ErrorCode } from "./response";
 
 /** SetupError codes that aren't in the standard ErrorCode set map to 400. */
@@ -26,6 +27,9 @@ export function toErrorResponse(err: unknown) {
   }
   if (err instanceof PriceError) {
     return jsonError("NOT_FOUND", err.message);
+  }
+  if (err instanceof AdminError) {
+    return jsonError(err.code === "DUPLICATE_SLUG" ? "CONFLICT" : "NOT_FOUND", err.message);
   }
   if (err instanceof ZodError) {
     return jsonError(

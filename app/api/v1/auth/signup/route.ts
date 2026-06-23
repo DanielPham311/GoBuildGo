@@ -21,15 +21,13 @@ export async function POST(req: NextRequest) {
 
   const { email, password, name } = parsed.data;
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const existing = await (prisma.user as any).findUnique({ where: { email } });
+  const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {
     return NextResponse.json({ error: { code: "CONFLICT", message: "Email already registered" } }, { status: 409 });
   }
 
   const passwordHash = await bcrypt.hash(password, 12);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const user = await (prisma.user as any).create({
+  const user = await prisma.user.create({
     data: { email, passwordHash, name: name ?? null, authProvider: "credentials" },
     select: { id: true, email: true, name: true, role: true },
   });
