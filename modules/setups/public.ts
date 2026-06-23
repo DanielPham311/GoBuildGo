@@ -30,7 +30,7 @@ export function toPublicSetup(s: Setup & { items?: unknown[] }): PublicSetup {
 /** A user's own setup summary (includes item/like counts). API_DESIGN.md §8. */
 type SetupWithCounts = Setup & { _count: { likes: number; items: number } };
 
-export function toUserSetupSummary(s: SetupWithCounts) {
+export function toUserSetupSummary(s: SetupWithCounts & { isPublic: boolean }) {
   return {
     id: s.id,
     name: s.name,
