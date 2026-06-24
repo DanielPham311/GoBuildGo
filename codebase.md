@@ -1,6 +1,6 @@
 # gobuildgo Codebase Reference
 
-> Last updated: 2026-06-23 (PR #14 merged: theme gallery pages + user dashboard/profile/favorites/settings)
+> Last updated: 2026-06-24 (PR #15 merged: admin CRUD, reports, prompt observability. F13 price history charts + component pages. F10/F16 confirmed working. Removed Facebook OAuth from roadmap.)
 
 ## Project Overview
 
@@ -286,6 +286,7 @@ export async function POST(req: NextRequest) {
 | Planner | `/planner` | ✅ 3-panel: room config / SVG visualizer / items + style score |
 | Visualize | `/visualize` | ✅ Form → API → items + generated image |
 | Community | `/community` | ✅ Gallery grid + filters + pagination |
+| Components | `/components`, `/components/[id]` | ✅ Category grid + detail with price chart (F13) |
 | Themes | `/themes`, `/themes/[slug]` | ✅ Theme gallery + detail (PR #14) |
 | Dashboard | `/dashboard` (+ profile/favorites/settings) | ✅ User dashboard (PR #14) |
 | Welcome | `/welcome` | ✅ Hero + 6 feature cards + 3-step guide |
@@ -346,7 +347,7 @@ GOOGLE_CLIENT_SECRET  # NextAuth Google OAuth
 
 | ID | Feature | Status |
 |---|---|---|
-| F1 | Auth (Google + Facebook + email) | Partial — Google + credentials work, Facebook + email verification missing |
+| F1 | Auth (Google + email) | Partial — Google + credentials work, email verification missing |
 | F2 | Component catalog browse | ✅ Real |
 | F3 | Interactive planner | ✅ Real |
 | F4 | 2D room visualizer | ✅ Real (SVG canvas) |
@@ -372,12 +373,38 @@ GOOGLE_CLIENT_SECRET  # NextAuth Google OAuth
 | F24 | Affiliate reporting | ✅ Real — `/admin/reports` (most-clicked + per-shop) |
 | F25 | Prompt observability | ✅ Real — `PromptLog` + `/admin/prompts` (search & visualize prompts logged fire-and-forget) |
 
-## Next Steps
+## 🔴 Need-to-Do (Remaining Work)
 
-1. ~~Security: requireAdmin() on scraper~~ ✅ Done — all `admin/*` routes now gated.
-2. ~~F23 admin CRUD + stats~~ ✅ Done — `modules/admin` + routes wired into `/admin` page.
-3. **F13 host page** — `PriceHistoryChart` + `/prices/history` API exist; needs a component detail page to render it (no `/components/[id]` page yet).
-4. **F17** — AI room photo analysis (`upload/room/*` routes stubbed 501)
-5. **F15** — Community comments
-6. **Tests** — Vitest + Playwright configured but no tests written yet.
-7. **Tech debt** — Consolidate the two affiliate signing modules (`modules/affiliate/service.ts` old vs `modules/prices/affiliate.ts` canonical).
+### P1 — High Priority (next sprint)
+
+| ID | Feature | What's needed | Difficulty |
+|---|---|---|---|
+| **F14** | Price drop alerts | Cron job: query PriceHistory for drops → match EmailSubscription (price_alert) → send email (Resend). | Medium |
+| **F15** | Community comments | New `Comment` model (setupId, userId, body, parentId). API CRUD + nested UI on setup detail. | Medium |
+
+### P2 — Medium Priority
+
+| ID | Feature | What's needed | Difficulty |
+|---|---|---|---|
+| **F1** | Email verification | Add email verification flow (magic link or token). | Low |
+| **F17** | AI room photo analysis | Upload photo → Claude Vision API → extract items → match components → suggest setup. | High |
+| **F20** | AI build recommendations | User preferences → embed → pgvector similarity → ranked component list. | Medium |
+
+### P3 — Lower Priority / Stretch
+
+| ID | Feature | What's needed | Difficulty |
+|---|---|---|---|
+| **F18** | SEO blog | MDX content collection, `/blog/[slug]` pages, RSS feed, sitemap. | Medium |
+| **F19** | AdSense | Add AdSense script, ad placements in sidebar/gallery. | Low |
+| **F21** | 3D visualization | Three.js or React Three Fiber room renderer. | High |
+| **F22** | Mobile PWA | next-pwa, manifest.json, service worker, offline cache. | Low |
+
+### Quick Wins (< 1 day each)
+
+| Task | Effort |
+|---|---|
+| AdSense script + placements | 1h |
+| PWA manifest + next-pwa config | 2h |
+| Email verification token flow | 4h |
+| Consolidate two affiliate modules | 2h |
+| Tests (Vitest + Playwright configured, no tests written) | Ongoing |
