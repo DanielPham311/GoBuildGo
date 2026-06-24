@@ -7,6 +7,14 @@
     {
       "path": "/api/v1/cron/embed",
       "schedule": "0 4 * * 1"
+    },
+    {
+      "path": "/api/v1/cron/scrape",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/v1/cron/snapshot",
+      "schedule": "0 2 * * *"
     }
   ]
 }

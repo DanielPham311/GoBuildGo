@@ -215,6 +215,18 @@ gobuildgo/
 - **service.ts**: `buildAffiliateUrl(url, itemId)`, `parseAffiliatePayload`, `recordClick`, `hashIp`, `getClickStats`
 - **Note**: Two affiliate signing implementations coexist — `modules/affiliate/service.ts` (old, url+itemId) and `modules/prices/affiliate.ts` (new canonical, priceId+componentId+shop). New code should use `modules/prices/affiliate.ts`.
 
+### Scraper Infrastructure ✅ (Firecrawl)
+- **`scripts/scrapers/firecrawl-api.ts`**: Firecrawl REST client — `firecrawlSearch(query, limit)` + `firecrawlScrape(url)` → markdown. Rate limited, retry with backoff.
+- **`scripts/scrapers/extract.ts`**: Parse markdown → `ExtractedProduct`. Extracts name, price (₫/VND regex), image, shop (domain), availability.
+- **`scripts/scrapers/firecrawl.ts`**: Multi-shop `Scraper` — search + scrape pipeline. Maps domain→shop, infers brand/category/colors/styleTags.
+- **`scripts/scrapers/queries.ts`**: 24 search queries (8 categories × 3 site: variants). 10 products/query. Budget: ~88 credits/run.
+- **`scripts/scrapers/index.ts`**: Registry — `firecrawlCrawler` (primary) + `shopeeScraper` (fallback).
+- **`scripts/scrape.ts`**: Standalone runner — `npx tsx scripts/scrape.ts`. Reuses cleanProduct → findDuplicate → upsertProduct.
+- **`scripts/snapshot.ts`**: Daily price snapshot — `INSERT INTO price_history SELECT id, price, price, now() FROM prices`.
+- **Cron routes**: `/api/v1/cron/scrape` (every 6h), `/api/v1/cron/snapshot` (daily 2AM UTC). Gated by `CRON_SECRET`.
+- **vercel.json**: 4 cron entries (ingest, embed, scrape, snapshot).
+- **Data flow**: search → scrape URLs → extract → clean → dedup (vector) → upsert Component+Price+PriceHistory → ScraperHealth
+
 ### `modules/search/` ✅
 - **service.ts**: `searchComponents(query)` — embed → pgvector cosine → diversify by category → attach offers
 - **public.ts**: `SearchResultItem` (with similarity + offer), `SearchResult`
@@ -328,7 +340,8 @@ export async function POST(req: NextRequest) {
 DATABASE_URL          # Neon Postgres
 VOYAGE_API_KEY       # Voyage AI (embeddings)
 AFFILIATE_SECRET     # HMAC signing key (new in PR #12)
-CRON_SECRET           # Vercel cron auth
+CRON_SECRET           # Vercel cron auth (scrape + snapshot)
+FIRECRAWL_API_KEY     # Firecrawl (multi-shop product crawler)
 NEXTAUTH_SECRET       # NextAuth encryption
 GOOGLE_CLIENT_ID      # NextAuth Google OAuth
 GOOGLE_CLIENT_SECRET  # NextAuth Google OAuth
