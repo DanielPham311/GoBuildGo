@@ -41,7 +41,7 @@ export async function findDuplicate(
      FROM components c
      WHERE c."isActive" = true
        AND c.embedding IS NOT NULL
-       AND c.category = $2
+       AND c.category = $2::"ComponentCategory"
      ORDER BY c.embedding <=> $1::vector
      LIMIT 1`,
     vecLiteral,
