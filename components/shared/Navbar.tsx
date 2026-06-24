@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useLocale } from "next-intl";
-import { Laptop, Sparkles, LogOut, User as UserIcon, Users, Palette, LayoutDashboard } from "lucide-react";
+import { Laptop, Sparkles, LogOut, User as UserIcon, Users, Palette, LayoutDashboard, Monitor } from "lucide-react";
 import { localeNames } from "@/i18n/config";
 
 export default function Navbar() {
@@ -43,6 +43,12 @@ export default function Navbar() {
 
           {/* Navigation Links */}
           <div className="hidden items-center gap-6 md:flex">
+            <Link href="/components" className={linkClass("/components")}>
+              <span className="flex items-center gap-1.5">
+                <Monitor className="h-3.5 w-3.5" />
+                Components
+              </span>
+            </Link>
             <Link href="/community" className={linkClass("/community")}>
               <span className="flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5" />
