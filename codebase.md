@@ -1,6 +1,6 @@
 # gobuildgo Codebase Reference
 
-> Last updated: 2026-06-24 (PR #15 merged: admin CRUD, reports, prompt observability. F13 price history charts + component pages. F10/F16 confirmed working. Removed Facebook OAuth from roadmap.)
+> Last updated: 2026-06-25 (Firecrawl hybrid scraper: search-only for Shopee/Lazada/Tiki, search+scrape fallback for PhongVu/GearVN. Credit budget guard at 900/1000. Daily cron. ~14 credits/run.)
 
 ## Project Overview
 
@@ -215,17 +215,19 @@ gobuildgo/
 - **service.ts**: `buildAffiliateUrl(url, itemId)`, `parseAffiliatePayload`, `recordClick`, `hashIp`, `getClickStats`
 - **Note**: Two affiliate signing implementations coexist — `modules/affiliate/service.ts` (old, url+itemId) and `modules/prices/affiliate.ts` (new canonical, priceId+componentId+shop). New code should use `modules/prices/affiliate.ts`.
 
-### Scraper Infrastructure ✅ (Firecrawl)
-- **`scripts/scrapers/firecrawl-api.ts`**: Firecrawl REST client — `firecrawlSearch(query, limit)` + `firecrawlScrape(url)` → markdown. Rate limited, retry with backoff.
-- **`scripts/scrapers/extract.ts`**: Parse markdown → `ExtractedProduct`. Extracts name, price (₫/VND regex), image, shop (domain), availability.
-- **`scripts/scrapers/firecrawl.ts`**: Multi-shop `Scraper` — search + scrape pipeline. Maps domain→shop, infers brand/category/colors/styleTags.
-- **`scripts/scrapers/queries.ts`**: 24 search queries (8 categories × 3 site: variants). 10 products/query. Budget: ~88 credits/run.
+### Scraper Infrastructure ✅ (Firecrawl Hybrid)
+- **`scripts/scrapers/firecrawl-api.ts`**: Firecrawl REST client — `firecrawlSearch()` + `firecrawlScrape()`. Tracks credits per call.
+- **`scripts/scrapers/extract.ts`**: `extractProduct()` (full scrape) + `extractFromSearchResult()` (search-only from title+desc).
+- **`scripts/scrapers/firecrawl.ts`**: Hybrid mode — search-only for Shopee/Lazada/Tiki (blocked), search+scrape fallback for PhongVu/GearVN.
+- **`scripts/scrapers/queries.ts`**: 12 queries (1 per shop+category). ~14 credits/run. Daily schedule.
+- **`scripts/scrapers/credits.ts`**: Credit tracking — search=1 credit, scrape=~5 credits.
 - **`scripts/scrapers/index.ts`**: Registry — `firecrawlCrawler` (primary) + `shopeeScraper` (fallback).
-- **`scripts/scrape.ts`**: Standalone runner — `npx tsx scripts/scrape.ts`. Reuses cleanProduct → findDuplicate → upsertProduct.
-- **`scripts/snapshot.ts`**: Daily price snapshot — `INSERT INTO price_history SELECT id, price, price, now() FROM prices`.
-- **Cron routes**: `/api/v1/cron/scrape` (every 6h), `/api/v1/cron/snapshot` (daily 2AM UTC). Gated by `CRON_SECRET`.
-- **vercel.json**: 4 cron entries (ingest, embed, scrape, snapshot).
-- **Data flow**: search → scrape URLs → extract → clean → dedup (vector) → upsert Component+Price+PriceHistory → ScraperHealth
+- **`scripts/scrape.ts`**: Standalone runner. Logs creditsUsed to ScraperHealth.
+- **`scripts/snapshot.ts`**: Daily price snapshot.
+- **`app/api/v1/cron/scrape/route.ts`**: Budget guard — skips if >900 credits used this month.
+- **Migration**: `20260625_add_credits_used` — adds `creditsUsed` to `scraper_health`.
+- **Cron**: scrape (daily 3AM UTC), snapshot (daily 2AM UTC). Gated by `CRON_SECRET`.
+- **Data flow**: search → extract from result → (if no price + gearvn/phongvu) scrape → clean → dedup → upsert → ScraperHealth
 
 ### `modules/search/` ✅
 - **service.ts**: `searchComponents(query)` — embed → pgvector cosine → diversify by category → attach offers

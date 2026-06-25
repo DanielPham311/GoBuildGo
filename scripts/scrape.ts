@@ -16,6 +16,7 @@ import { cleanProduct } from "./scrapers/clean";
 import { findDuplicate } from "./scrapers/dedup";
 import { slugify } from "@/lib/utils";
 import { embedText } from "@/shared/ai";
+import { getCreditsUsed, resetCredits } from "./scrapers/credits";
 
 const VALID_CATEGORIES = ["desk", "chair", "monitor", "keyboard", "mouse", "lighting", "decor", "audio", "accessory"] as const;
 const VALID_SHOPS = ["shopee", "lazada", "tiki", "phongvu", "gearvn", "nhaxinh"] as const;
@@ -268,6 +269,10 @@ export async function main() {
 
   const duration = Date.now() - startedAt;
 
+  // Track credits used
+  const credits = getCreditsUsed();
+  resetCredits();
+
   // Write health record
   await prisma.scraperHealth.create({
     data: {
@@ -277,6 +282,7 @@ export async function main() {
       upserted: totalUpserted,
       skipped: totalSkipped,
       errors: totalErrors,
+      creditsUsed: credits.total,
     },
   });
 
