@@ -27,10 +27,24 @@ const SHOP_DOMAINS = [
   "gearvn.com",
 ];
 
+/** Sites that block Firecrawl scraping — skip scrape, use search-only */
+const SCRAPE_BLOCKED_DOMAINS = ["shopee.vn", "lazada.vn", "tiki.vn"];
+
 function isShopUrl(url: string): boolean {
   try {
     const u = new URL(url);
     return SHOP_DOMAINS.some((d) => u.hostname === d || u.hostname === `www.${d}`);
+  } catch {
+    return false;
+  }
+}
+
+/** Only PhongVu and GearVN are scrapeable as fallback */
+function canScrape(url: string): boolean {
+  try {
+    const u = new URL(url);
+    const hostname = u.hostname.replace(/^www\./, "");
+    return !SCRAPE_BLOCKED_DOMAINS.some((d) => hostname === d || hostname.endsWith(`.${d}`));
   } catch {
     return false;
   }
@@ -125,25 +139,23 @@ export const firecrawlCrawler: Scraper = {
         continue;
       }
 
-      // Try full scrape first
-      let extracted = null;
-      try {
-        // Rate limit: 1.5s between scrape calls
-        await new Promise((r) => setTimeout(r, 1500));
+      // Step 1: Extract from search result (1 credit, no scrape cost)
+      let extracted = extractFromSearchResult(result.title, result.description, result.url);
 
-        const scrapeResult = await firecrawlScrape(result.url);
-        extracted = extractProduct(
-          scrapeResult.markdown,
-          result.url,
-          { title: scrapeResult.title, ogImage: scrapeResult.ogImage },
-        );
-      } catch {
-        // Scrape failed (CAPTCHA/block) — fall back to search result data
-      }
-
-      // If scrape failed or no price found, try extracting from search result
-      if (!extracted || extracted.price === null) {
-        extracted = extractFromSearchResult(result.title, result.description, result.url);
+      // Step 2: If no price AND site is scrapeable, try scrape fallback
+      if (!extracted && canScrape(result.url)) {
+        try {
+          await new Promise((r) => setTimeout(r, 1500));
+          const scrapeResult = await firecrawlScrape(result.url);
+          extracted = extractProduct(
+            scrapeResult.markdown,
+            result.url,
+            { title: scrapeResult.title, ogImage: scrapeResult.ogImage },
+          );
+          console.log(`    [scrape] ${extracted ? "got price" : "no price"} from ${result.url.slice(0, 50)}`);
+        } catch {
+          // Scrape failed — skip
+        }
       }
 
       if (extracted && extracted.price !== null) {

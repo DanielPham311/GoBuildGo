@@ -323,11 +323,12 @@ model SetupView {
 model ScraperHealth {
   id          String   @id @default(cuid())
   scraperName String
-  status      String   // "ok" | "error" | "running"
+  status      String   // "ok" | "error" | "running" | "skipped_budget"
   durationMs  Int?
   upserted    Int      @default(0)
   skipped     Int      @default(0)
   errors      Int      @default(0)
+  creditsUsed Int      @default(0)
   ranAt       DateTime @default(now())
 
   @@index([scraperName, ranAt(sort: Desc)])

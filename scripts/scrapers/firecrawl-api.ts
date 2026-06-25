@@ -6,6 +6,8 @@
 import { config } from "dotenv";
 config({ path: ".env" });
 
+import { recordSearch, recordScrape } from "./credits";
+
 const FIRECRAWL_API = "https://api.firecrawl.dev/v1";
 
 function getApiKey(): string {
@@ -61,7 +63,10 @@ export async function firecrawlSearch(
   }
 
   const json = (await res.json()) as FirecrawlSearchResponse;
-  return json.data ?? [];
+  const results = json.data ?? [];
+  // Each search call costs 1 credit regardless of result count
+  recordSearch(1);
+  return results;
 }
 
 /** Scrape a single URL and return markdown content. */
@@ -89,6 +94,8 @@ export async function firecrawlScrape(url: string): Promise<{
   }
 
   const json = (await res.json()) as FirecrawlScrapeResponse;
+  // Scrape costs ~5 credits (varies by page complexity)
+  recordScrape(1);
   return {
     markdown: json.data.markdown,
     title: json.data.metadata.title,
