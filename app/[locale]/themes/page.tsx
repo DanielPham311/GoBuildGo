@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { getTranslations } from "next-intl/server";
 import { listThemes, toPublicTheme } from "@/modules/themes";
 import { listThemesQuerySchema } from "@/modules/themes/schema";

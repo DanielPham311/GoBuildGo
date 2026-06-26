@@ -1,4 +1,4 @@
-import { redirect } from "next/navigation";
+import { redirect } from "@/i18n/navigation";
 import { getCurrentUser } from "@/shared/auth";
 import { AdminNav } from "./_components/AdminNav";
 
