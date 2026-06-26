@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { Heart, Trash2, ShoppingBag } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
@@ -16,6 +17,7 @@ type Favorite = {
 };
 
 export default function FavoritesPage() {
+  const t = useTranslations("dashboard");
   const [items, setItems] = useState<Favorite[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -36,11 +38,11 @@ export default function FavoritesPage() {
       setItems(data.data);
       setTotal(data.total);
     } catch {
-      setError("Failed to load favorites");
+      setError(t("common:error"));
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [page, t]);
 
   useEffect(() => {
     loadFavorites();
@@ -73,22 +75,22 @@ export default function FavoritesPage() {
     <div className="space-y-6">
       <h2 className="text-lg font-semibold flex items-center gap-2">
         <Heart className="h-5 w-5 text-rose-500" />
-        Favorited Components
+        {t("favorites")}
         <span className="text-sm font-normal text-muted-foreground">({total})</span>
       </h2>
 
       {items.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-xl border bg-card py-16 text-center">
           <ShoppingBag className="h-12 w-12 text-muted-foreground mb-4" />
-          <p className="text-lg font-medium text-muted-foreground">No favorites yet.</p>
+          <p className="text-lg font-medium text-muted-foreground">{t("noFavorites")}</p>
           <p className="mt-1 text-sm text-muted-foreground">
-            Browse components and click the heart icon to save them.
+            {t("noFavoritesSubtext")}
           </p>
           <Link
             href="/planner"
             className="mt-4 rounded-lg bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
           >
-            Browse Components
+            {t("browseComponents")}
           </Link>
         </div>
       ) : (
@@ -99,7 +101,6 @@ export default function FavoritesPage() {
                 key={item.id}
                 className="flex items-center gap-4 rounded-xl border bg-card p-4 shadow-sm transition-all hover:shadow-md"
               >
-                {/* Thumbnail */}
                 <div className="h-14 w-14 shrink-0 rounded-lg bg-muted overflow-hidden">
                   {item.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -115,7 +116,6 @@ export default function FavoritesPage() {
                   )}
                 </div>
 
-                {/* Info */}
                 <div className="min-w-0 flex-1">
                   <h3 className="font-medium text-sm truncate">{item.name}</h3>
                   <p className="text-xs text-muted-foreground">
@@ -128,11 +128,10 @@ export default function FavoritesPage() {
                   )}
                 </div>
 
-                {/* Actions */}
                 <button
                   onClick={() => removeFavorite(item.id)}
                   className="shrink-0 rounded-lg p-2 text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-                  title="Remove from favorites"
+                  title={t("removeFromFavorites")}
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -140,7 +139,6 @@ export default function FavoritesPage() {
             ))}
           </div>
 
-          {/* Pagination */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2">
               {page > 1 && (
@@ -148,18 +146,18 @@ export default function FavoritesPage() {
                   onClick={() => setPage(page - 1)}
                   className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
                 >
-                  Previous
+                  {t("common:previous")}
                 </button>
               )}
               <span className="text-sm text-muted-foreground">
-                Page {page} of {totalPages}
+                {t("pageOf", { page, totalPages })}
               </span>
               {page < totalPages && (
                 <button
                   onClick={() => setPage(page + 1)}
                   className="rounded-lg border px-4 py-2 text-sm font-medium hover:bg-muted"
                 >
-                  Next
+                  {t("common:next")}
                 </button>
               )}
             </div>

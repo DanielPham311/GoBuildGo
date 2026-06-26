@@ -3,14 +3,17 @@
 import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Laptop, Mail, Lock, AlertCircle } from "lucide-react";
+import { Laptop, Mail, Lock, User, AlertCircle } from "lucide-react";
 
-export default function SignInPage() {
+export default function SignUpPage() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") ?? "/planner";
+  const callbackUrl = searchParams.get("callbackUrl") ?? "/welcome";
 
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -21,28 +24,37 @@ export default function SignInPage() {
     setLoading(true);
     setError(null);
 
-    const res = await signIn("credentials", { email, password, redirect: false });
+    const signupRes = await fetch("/api/v1/auth/signup", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ email, password, name }),
+    });
 
-    if (res?.error) {
-      setError("Incorrect email or password. Please try again.");
+    if (!signupRes.ok) {
+      const json = await signupRes.json();
+      setError(json?.error?.message ?? t("signupError"));
       setLoading(false);
-    } else {
-      // Use window.location for full page reload so middleware picks up the new session
-      window.location.href = callbackUrl;
+      return;
     }
+
+    const loginRes = await signIn("credentials", { email, password, redirect: false });
+    if (loginRes?.error) {
+      setError(t("autoLoginFailed"));
+      setLoading(false);
+      return;
+    }
+    window.location.href = callbackUrl;
   }
 
-  function onGoogleSignIn() {
+  function onGoogleSignUp() {
     signIn("google", { callbackUrl });
   }
 
   return (
     <main className="relative flex min-h-screen items-center justify-center bg-background px-6 overflow-hidden">
-      {/* Background blobs */}
       <div className="absolute top-[-10%] left-[-10%] h-[400px] w-[400px] rounded-full bg-primary/5 blur-[100px] pointer-events-none" />
       <div className="absolute bottom-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-blue-500/5 blur-[120px] pointer-events-none" />
 
-      {/* Grid Pattern Overlay */}
       <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--border)/0.2)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border)/0.2)_1px,transparent_1px)] bg-[size:3.5rem_3.5rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_50%,#000_70%,transparent_100%)] pointer-events-none" />
 
       <div className="relative w-full max-w-md space-y-6 rounded-2xl border border-border/40 bg-card/45 p-8 shadow-xl backdrop-blur-md animate-in fade-in duration-500">
@@ -50,13 +62,12 @@ export default function SignInPage() {
           <Link href="/" className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-sm">
             <Laptop className="h-5 w-5" />
           </Link>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Welcome Back</h1>
-          <p className="text-sm text-muted-foreground">Sign in to manage your dream workspace</p>
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">{t("createAccount")}</h1>
+          <p className="text-sm text-muted-foreground">{t("signupDescription")}</p>
         </div>
 
-        {/* Google Sign In */}
         <button
-          onClick={onGoogleSignIn}
+          onClick={onGoogleSignUp}
           className="flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-background/50 px-4 py-2.5 text-sm font-medium text-foreground transition-all hover:bg-muted"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -65,23 +76,39 @@ export default function SignInPage() {
             <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
             <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
           </svg>
-          Continue with Google
+          {t("signUpWithGoogle")}
         </button>
 
-        {/* Divider */}
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-border/40" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
+            <span className="bg-card px-2 text-muted-foreground">{t("orWithEmail")}</span>
           </div>
         </div>
 
         <form onSubmit={onSubmit} className="space-y-4">
           <div className="space-y-1.5">
+            <label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {t("fullName")}
+            </label>
+            <div className="relative flex items-center">
+              <User className="absolute left-3.5 h-4 w-4 text-muted-foreground" />
+              <input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                className="w-full rounded-xl border border-border bg-background/50 py-2.5 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
+                placeholder="John Doe"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
             <label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Email
+              {t("emailAddress")}
             </label>
             <div className="relative flex items-center">
               <Mail className="absolute left-3.5 h-4 w-4 text-muted-foreground" />
@@ -100,7 +127,7 @@ export default function SignInPage() {
 
           <div className="space-y-1.5">
             <label htmlFor="password" className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
-              Password
+              {t("password")}
             </label>
             <div className="relative flex items-center">
               <Lock className="absolute left-3.5 h-4 w-4 text-muted-foreground" />
@@ -108,11 +135,12 @@ export default function SignInPage() {
                 id="password"
                 type="password"
                 required
-                autoComplete="current-password"
+                minLength={8}
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full rounded-xl border border-border bg-background/50 py-2.5 pl-10 pr-4 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
-                placeholder="••••••••"
+                placeholder="Min 8 characters"
               />
             </div>
           </div>
@@ -129,15 +157,15 @@ export default function SignInPage() {
             disabled={loading}
             className="w-full rounded-xl bg-primary py-3 text-sm font-semibold text-primary-foreground shadow-lg transition-all duration-300 hover:bg-primary/95 disabled:opacity-50 hover:scale-[1.01]"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? t("creatingAccount") : t("signUp")}
           </button>
         </form>
 
         <div className="border-t border-border/40 pt-4 text-center">
           <p className="text-sm text-muted-foreground">
-            New to gobuildgo?{" "}
-            <Link href="/signup" className="font-semibold text-primary hover:underline">
-              Create an account
+            {t("alreadyHaveAccount")}{" "}
+            <Link href="/signin" className="font-semibold text-primary hover:underline">
+              {t("signIn")}
             </Link>
           </p>
         </div>

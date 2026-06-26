@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { ArrowRight, Sparkles, Layout, ShoppingBag, Palette, Ruler } from "lucide-react";
 
 export default function HomePage() {
+  const t = useTranslations("home");
+
   return (
     <main className="relative min-h-screen overflow-hidden bg-background">
       {/* Decorative floating blurred background shapes */}
@@ -18,20 +21,20 @@ export default function HomePage() {
           {/* Tagline Badge */}
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary backdrop-blur-md animate-fade-in">
             <Sparkles className="h-4 w-4" />
-            <span>Interactive Setup Planner for Vietnam</span>
+            <span>{t("heroTagline")}</span>
           </div>
 
           {/* Main Hero Header */}
           <h1 className="text-5xl font-extrabold tracking-tight sm:text-7xl">
-            Build Your Dream <br />
+            {t("heroTitle")} <br />
             <span className="bg-gradient-to-r from-blue-500 via-primary to-indigo-600 bg-clip-text text-transparent">
-              Desk Workspace
+              {t("heroHighlight")}
             </span>
           </h1>
 
           {/* Subtext */}
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Plan your layout in 2D, balance your budget in VND, optimize color harmony, and shop the cheapest deals across Shopee, Lazada, and Tiki.
+            {t("heroSubtext")}
           </p>
 
           {/* CTA Buttons */}
@@ -40,7 +43,7 @@ export default function HomePage() {
               href="/planner"
               className="group flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-semibold text-primary-foreground shadow-lg transition-all duration-300 hover:scale-[1.02] hover:bg-primary/90"
             >
-              Start Planning
+              {t("startPlanning")}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
             <Link
@@ -48,7 +51,7 @@ export default function HomePage() {
               className="flex items-center gap-2 rounded-xl border bg-background/50 backdrop-blur-md px-8 py-4 text-base font-semibold text-foreground shadow-sm transition-all duration-300 hover:scale-[1.02] hover:bg-muted"
             >
               <Sparkles className="h-5 w-5 text-amber-500" />
-              Try AI Visualizer
+              {t("tryVisualizer")}
             </Link>
           </div>
         </div>
@@ -63,9 +66,9 @@ export default function HomePage() {
               <div className="mb-4 inline-flex rounded-xl bg-blue-500/10 p-3 text-blue-500 group-hover:scale-110 transition-transform">
                 <Ruler className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold mb-2">2D Layout Design</h3>
+              <h3 className="text-lg font-bold mb-2">{t("featureLayout")}</h3>
               <p className="text-sm text-muted-foreground">
-                Set custom room dimensions. Position desks, chairs, monitors, and decor interactively on our drag-and-drop canvas.
+                {t("featureLayoutDesc")}
               </p>
             </div>
 
@@ -74,9 +77,9 @@ export default function HomePage() {
               <div className="mb-4 inline-flex rounded-xl bg-primary/10 p-3 text-primary group-hover:scale-110 transition-transform">
                 <Palette className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold mb-2">Style & Color Harmony</h3>
+              <h3 className="text-lg font-bold mb-2">{t("featureStyle")}</h3>
               <p className="text-sm text-muted-foreground">
-                Get real-time style scores. Let our engine evaluate how consistent your setup is with Minimalist, RGB, or wood aesthetics.
+                {t("featureStyleDesc")}
               </p>
             </div>
 
@@ -85,9 +88,9 @@ export default function HomePage() {
               <div className="mb-4 inline-flex rounded-xl bg-amber-500/10 p-3 text-amber-500 group-hover:scale-110 transition-transform">
                 <ShoppingBag className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-bold mb-2">Smart Price Alerts</h3>
+              <h3 className="text-lg font-bold mb-2">{t("featurePrice")}</h3>
               <p className="text-sm text-muted-foreground">
-                Compare actual listings in Vietnam. Save money with auto-updates and affiliate deals mapped directly to your parts list.
+                {t("featurePriceDesc")}
               </p>
             </div>
           </div>
@@ -98,8 +101,8 @@ export default function HomePage() {
       <section className="container mx-auto px-6 py-16 relative z-10 border-t bg-muted/20">
         <div className="mx-auto max-w-5xl text-center space-y-12">
           <div className="space-y-3">
-            <h2 className="text-3xl font-bold tracking-tight">Curated Themes for Inspiration</h2>
-            <p className="text-muted-foreground">Select a theme to auto-fill your planner layout instantly.</p>
+            <h2 className="text-3xl font-bold tracking-tight">{t("themesTitle")}</h2>
+            <p className="text-muted-foreground">{t("themesSubtext")}</p>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 md:grid-cols-4 text-left">
@@ -108,25 +111,21 @@ export default function HomePage() {
                 title: "Japandi Cozy",
                 colors: ["#F5F5DC", "#D2B48C", "#8B7355", "#EAE6DF", "#3E3B39"],
                 count: 14,
-                desc: "Wood accents and minimal structure.",
               },
               {
                 title: "RGB Cyberpunk",
                 colors: ["#FF007F", "#00F0FF", "#181825", "#7000FF", "#0A0A10"],
                 count: 18,
-                desc: "Neon highlights and dynamic components.",
               },
               {
                 title: "Industrial Studio",
                 colors: ["#2C302E", "#8B8C89", "#D2691E", "#3A3D40", "#141517"],
                 count: 11,
-                desc: "Raw metal structures and concrete shades.",
               },
               {
                 title: "Monochrome Pro",
                 colors: ["#FFFFFF", "#F5F5F7", "#8E8E93", "#1C1C1E", "#000000"],
                 count: 15,
-                desc: "Sleek metallic textures and clean geometry.",
               },
             ].map((theme, i) => (
               <div
@@ -136,7 +135,7 @@ export default function HomePage() {
                 <h3 className="font-bold text-base group-hover:text-primary transition-colors">
                   {theme.title}
                 </h3>
-                <p className="text-xs text-muted-foreground mt-1 mb-4 h-8">{theme.desc}</p>
+                <p className="text-xs text-muted-foreground mt-1 mb-4 h-8">{t("useTheme")}</p>
                 <div className="flex gap-1.5 mb-4">
                   {theme.colors.map((c, idx) => (
                     <div
@@ -148,12 +147,12 @@ export default function HomePage() {
                   ))}
                 </div>
                 <div className="flex items-center justify-between mt-auto">
-                  <span className="text-xs text-muted-foreground">{theme.count} items recommended</span>
+                  <span className="text-xs text-muted-foreground">{theme.count} {t("common:viewAll")}</span>
                   <Link
                     href="/planner"
                     className="text-xs font-semibold text-primary group-hover:underline flex items-center gap-1"
                   >
-                    Use Theme →
+                    {t("useTheme")} →
                   </Link>
                 </div>
               </div>
@@ -164,4 +163,3 @@ export default function HomePage() {
     </main>
   );
 }
-

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { prisma } from "@/shared/db";
 import { formatCurrency } from "@/lib/utils";
 import { ComponentCategory } from "@prisma/client";
@@ -10,17 +11,17 @@ export const metadata = {
 
 export const dynamic = "force-dynamic";
 
-const CATEGORIES: { value: ComponentCategory | ""; label: string }[] = [
-  { value: "", label: "All" },
-  { value: "desk", label: "Desks" },
-  { value: "chair", label: "Chairs" },
-  { value: "monitor", label: "Monitors" },
-  { value: "keyboard", label: "Keyboards" },
-  { value: "mouse", label: "Mice" },
-  { value: "lighting", label: "Lighting" },
-  { value: "decor", label: "Decor" },
-  { value: "audio", label: "Audio" },
-  { value: "accessory", label: "Accessories" },
+const CATEGORIES: { value: ComponentCategory | ""; labelKey: string }[] = [
+  { value: "", labelKey: "all" },
+  { value: "desk", labelKey: "desks" },
+  { value: "chair", labelKey: "chairs" },
+  { value: "monitor", labelKey: "monitors" },
+  { value: "keyboard", labelKey: "keyboards" },
+  { value: "mouse", labelKey: "mice" },
+  { value: "lighting", labelKey: "lighting" },
+  { value: "decor", labelKey: "decor" },
+  { value: "audio", labelKey: "audio" },
+  { value: "accessory", labelKey: "accessories" },
 ];
 
 export default async function ComponentsPage({
@@ -28,6 +29,7 @@ export default async function ComponentsPage({
 }: {
   searchParams: Record<string, string | undefined>;
 }) {
+  const t = await getTranslations("components");
   const sp = searchParams;
   const category = (sp.category as ComponentCategory) || "";
   const page = Math.max(1, parseInt(sp.page ?? "1", 10) || 1);
@@ -54,9 +56,9 @@ export default async function ComponentsPage({
     <main className="min-h-screen bg-background">
       <section className="border-b bg-muted/20">
         <div className="mx-auto max-w-7xl px-6 py-12">
-          <h1 className="text-3xl font-bold tracking-tight">Components</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="mt-2 text-muted-foreground">
-            Browse {total} components. Compare prices and track history.
+            {t("browseCount", { count: total })}
           </p>
         </div>
       </section>
@@ -74,7 +76,7 @@ export default async function ComponentsPage({
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
-                {c.label}
+                {t(c.labelKey)}
               </Link>
             ))}
           </div>
@@ -99,7 +101,7 @@ export default async function ComponentsPage({
                   />
                 ) : (
                   <div className="flex h-full items-center justify-center text-muted-foreground">
-                    No image
+                    {t("noImage")}
                   </div>
                 )}
               </div>
@@ -119,7 +121,7 @@ export default async function ComponentsPage({
 
         {components.length === 0 && (
           <div className="py-16 text-center text-muted-foreground">
-            No components found.
+            {t("noComponents")}
           </div>
         )}
 
@@ -130,18 +132,18 @@ export default async function ComponentsPage({
                 href={`/components?page=${page - 1}${category ? `&category=${category}` : ""}`}
                 className="rounded-lg border px-4 py-2 text-sm hover:bg-muted"
               >
-                Previous
+                {t("common:previous")}
               </Link>
             )}
             <span className="text-sm text-muted-foreground">
-              Page {page} of {totalPages}
+              {t("pageOf", { page, totalPages })}
             </span>
             {page < totalPages && (
               <Link
                 href={`/components?page=${page + 1}${category ? `&category=${category}` : ""}`}
                 className="rounded-lg border px-4 py-2 text-sm hover:bg-muted"
               >
-                Next
+                {t("common:next")}
               </Link>
             )}
           </div>
