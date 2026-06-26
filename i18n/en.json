@@ -1,6 +1,6 @@
 {
   "common": {
-    "appName": "gobuildgo",
+    "appName": "GoBuildGo",
     "loading": "Loading...",
     "error": "Something went wrong",
     "save": "Save",
@@ -27,7 +27,7 @@
     "logout": "Log out"
   },
   "home": {
-    "heroTagline": "Interactive Setup Planner for Vietnam",
+    "heroTagline": "Interactive Setup Planner for Everyone",
     "heroTitle": "Build Your Dream",
     "heroHighlight": "Desk Workspace",
     "heroSubtext": "Plan your layout in 2D, balance your budget in VND, optimize color harmony, and shop the cheapest deals across Shopee, Lazada, and Tiki.",

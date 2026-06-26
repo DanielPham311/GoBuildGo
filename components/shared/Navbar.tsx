@@ -1,7 +1,6 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Link, usePathname, useRouter } from "@/i18n/navigation";
 import { useSession, signOut } from "next-auth/react";
 import { useLocale, useTranslations } from "next-intl";
 import { Laptop, Sparkles, LogOut, User as UserIcon, Users, Palette, LayoutDashboard, Monitor } from "lucide-react";
@@ -18,7 +17,7 @@ export default function Navbar() {
 
   function switchLocale(locale: string) {
     document.cookie = `NEXT_LOCALE=${locale};path=/;max-age=31536000`;
-    router.refresh();
+    router.push(`/${locale}${pathname}`);
   }
 
   const linkClass = (href: string) => {

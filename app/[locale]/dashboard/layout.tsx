@@ -2,8 +2,7 @@
 
 import { useEffect } from "react";
 import { useSession } from "next-auth/react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { Link, usePathname } from "@/i18n/navigation";
 import { User, Heart, Settings } from "lucide-react";
 
 const tabs = [
