@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import { Database, Activity, RefreshCw, Play, CheckCircle2, XCircle, AlertCircle, Clock } from "lucide-react";
 
 type ScraperLog = {
@@ -42,6 +43,7 @@ type StatsData = {
 };
 
 export default function AdminPage() {
+  const t = useTranslations("admin");
   const [status, setStatus] = useState<StatusData | null>(null);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [statusLoading, setStatusLoading] = useState(true);
@@ -78,11 +80,11 @@ export default function AdminPage() {
         body: JSON.stringify({}),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error?.message ?? "Scraper failed");
+      if (!res.ok) throw new Error(json?.error?.message ?? t("scraperFailed"));
       setRunResult(json as RunResult);
       await fetchStatus();
     } catch (err) {
-      setRunError(err instanceof Error ? err.message : "Unknown error");
+      setRunError(err instanceof Error ? err.message : t("unknownError"));
     } finally {
       setRunning(false);
     }
@@ -92,8 +94,8 @@ export default function AdminPage() {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-tight">Admin Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Monitor scraper health and catalog database statistics.</p>
+          <h1 className="text-3xl font-extrabold tracking-tight">{t("title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("description")}</p>
         </div>
         <button
           onClick={fetchStatus}
@@ -101,15 +103,14 @@ export default function AdminPage() {
           className="flex items-center justify-center gap-1.5 rounded-xl border border-border/40 bg-card px-4 py-2 text-sm font-semibold hover:bg-muted disabled:opacity-50 transition-all"
         >
           <RefreshCw className={`h-4 w-4 ${statusLoading ? "animate-spin" : ""}`} />
-          Refresh
+          {t("refresh")}
         </button>
       </div>
 
-      {/* Platform Overview */}
       <section className="space-y-4">
         <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
           <Activity className="h-4 w-4" />
-          Platform Overview
+          {t("platformOverview")}
         </h2>
         {statusLoading ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
@@ -120,10 +121,10 @@ export default function AdminPage() {
         ) : stats ? (
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
-              { label: "Users", value: stats.users },
-              { label: "Setups", value: stats.setups },
-              { label: "Public Setups", value: stats.publicSetups },
-              { label: "Affiliate Clicks", value: stats.affiliateClicks },
+              { label: t("users"), value: stats.users },
+              { label: t("setups"), value: stats.setups },
+              { label: t("publicSetups"), value: stats.publicSetups },
+              { label: t("affiliateClicks"), value: stats.affiliateClicks },
             ].map((s) => (
               <div key={s.label} className="rounded-2xl border border-border/40 bg-card/45 p-5 shadow-sm backdrop-blur-md">
                 <p className="text-3xl font-extrabold tracking-tight text-foreground">{s.value.toLocaleString()}</p>
@@ -134,11 +135,10 @@ export default function AdminPage() {
         ) : null}
       </section>
 
-      {/* Stats Cards */}
       <section className="space-y-4">
         <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
           <Database className="h-4 w-4" />
-          Database Metrics
+          {t("databaseMetrics")}
         </h2>
         {statusLoading ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -149,9 +149,9 @@ export default function AdminPage() {
         ) : status ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
             {[
-              { label: "Total Components", value: status.components },
-              { label: "Active Offers", value: status.prices },
-              { label: "Stale Embeddings", value: status.embeddingsStale, alert: status.embeddingsStale > 0 },
+              { label: t("totalComponents"), value: status.components },
+              { label: t("activeOffers"), value: status.prices },
+              { label: t("staleEmbeddings"), value: status.embeddingsStale, alert: status.embeddingsStale > 0 },
             ].map((s) => (
               <div key={s.label} className="rounded-2xl border border-border/40 bg-card/45 p-5 shadow-sm backdrop-blur-md">
                 <p className={`text-3xl font-extrabold tracking-tight ${s.alert ? "text-amber-500" : "text-foreground"}`}>
@@ -164,20 +164,19 @@ export default function AdminPage() {
         ) : (
           <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-500">
             <AlertCircle className="h-5 w-5" />
-            <span>Could not load database status.</span>
+            <span>{t("loadError")}</span>
           </div>
         )}
       </section>
 
-      {/* Scraper controls */}
       <section className="space-y-4 rounded-2xl border border-border/40 bg-card/45 p-6 backdrop-blur-md shadow-sm">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="space-y-1">
             <h2 className="text-base font-bold text-foreground flex items-center gap-1.5">
               <Activity className="h-4 w-4 text-primary" />
-              Scraper Operations
+              {t("scraperOperations")}
             </h2>
-            <p className="text-xs text-muted-foreground">Trigger manual catalog ingest pipelines across local merchants.</p>
+            <p className="text-xs text-muted-foreground">{t("scraperOperationsDesc")}</p>
           </div>
           <button
             onClick={runScraper}
@@ -187,12 +186,12 @@ export default function AdminPage() {
             {running ? (
               <>
                 <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-                <span>Running Pipeline...</span>
+                <span>{t("runningPipeline")}</span>
               </>
             ) : (
               <>
                 <Play className="h-4 w-4 fill-current text-primary-foreground" />
-                <span>Run Scraper</span>
+                <span>{t("runScraper")}</span>
               </>
             )}
           </button>
@@ -202,30 +201,30 @@ export default function AdminPage() {
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm space-y-2 animate-in fade-in duration-300">
             <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-bold">
               <CheckCircle2 className="h-4 w-4" />
-              <span>Pipeline Run Complete</span>
+              <span>{t("pipelineComplete")}</span>
             </div>
             <div className="grid grid-cols-2 gap-4 text-xs font-semibold text-muted-foreground sm:grid-cols-5">
               <div>
                 <p className="text-foreground text-sm font-extrabold">{runResult.upserted}</p>
-                <p>Upserted</p>
+                <p>{t("upserted")}</p>
               </div>
               <div>
                 <p className="text-foreground text-sm font-extrabold">{runResult.skipped}</p>
-                <p>Skipped</p>
+                <p>{t("skipped")}</p>
               </div>
               <div>
                 <p className="text-foreground text-sm font-extrabold">{runResult.priceChanges}</p>
-                <p>Price Changes</p>
+                <p>{t("priceChanges")}</p>
               </div>
               <div>
                 <p className={`${runResult.errors > 0 ? "text-rose-500" : "text-foreground"} text-sm font-extrabold`}>
                   {runResult.errors}
                 </p>
-                <p>Errors</p>
+                <p>{t("errors")}</p>
               </div>
               <div>
                 <p className="text-foreground text-sm font-extrabold">{(runResult.durationMs / 1000).toFixed(1)}s</p>
-                <p>Duration</p>
+                <p>{t("duration")}</p>
               </div>
             </div>
           </div>
@@ -234,24 +233,23 @@ export default function AdminPage() {
         {runError && (
           <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-sm font-semibold text-rose-500">
             <AlertCircle className="h-5 w-5" />
-            <span>Error: {runError}</span>
+            <span>{t("error")}: {runError}</span>
           </div>
         )}
       </section>
 
-      {/* Scraper health log table */}
       {status?.health && status.health.length > 0 && (
         <section className="space-y-4">
           <h2 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
             <Clock className="h-4 w-4" />
-            Execution History (Last 20 Runs)
+            {t("executionHistory")}
           </h2>
           <div className="overflow-hidden rounded-2xl border border-border/40 bg-card/45 shadow-sm">
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="border-b border-border/40 bg-muted/40">
                   <tr>
-                    {["Scraper", "Status", "Upserted", "Skipped", "Errors", "Duration", "Execution Time"].map((h) => (
+                    {[t("scraper"), t("status"), t("upserted"), t("skipped"), t("errors"), t("duration"), t("executionTime")].map((h) => (
                       <th key={h} className="px-5 py-3.5 text-left text-xs font-bold uppercase tracking-wider text-muted-foreground">
                         {h}
                       </th>
@@ -293,4 +291,3 @@ export default function AdminPage() {
     </div>
   );
 }
-

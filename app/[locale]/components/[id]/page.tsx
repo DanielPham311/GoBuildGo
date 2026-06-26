@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   LineChart,
   Line,
@@ -47,6 +48,7 @@ export default function ComponentDetailPage({
   params: { id: string };
 }) {
   const { id } = params;
+  const t = useTranslations("components");
   const [comparison, setComparison] = useState<ComparisonResponse | null>(null);
   const [history, setHistory] = useState<HistoryResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -72,7 +74,7 @@ export default function ComponentDetailPage({
   if (loading) {
     return (
       <main className="min-h-screen bg-background">
-        <div className="mx-auto max-w-5xl px-6 py-12">Loading...</div>
+        <div className="mx-auto max-w-5xl px-6 py-12">{t("common:loading")}</div>
       </main>
     );
   }
@@ -82,15 +84,14 @@ export default function ComponentDetailPage({
       <main className="min-h-screen bg-background">
         <div className="mx-auto max-w-5xl px-6 py-12">
           <Link href="/components" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft size={16} /> Back to components
+            <ArrowLeft size={16} /> {t("backToComponents")}
           </Link>
-          <p className="py-8 text-center text-muted-foreground">Component not found.</p>
+          <p className="py-8 text-center text-muted-foreground">{t("notFound")}</p>
         </div>
       </main>
     );
   }
 
-  // Build chart data: merge all series into { date, shop1: price, shop2: price, ... }
   const shopKeys = history?.series.map((s) => s.shop) ?? [];
   const allDates = new Set<string>();
   history?.series.forEach((s) => s.points.forEach((p) => allDates.add(p.at)));
@@ -108,33 +109,30 @@ export default function ComponentDetailPage({
     <main className="min-h-screen bg-background">
       <div className="mx-auto max-w-5xl px-6 py-8">
         <Link href="/components" className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft size={16} /> Back to components
+          <ArrowLeft size={16} /> {t("backToComponents")}
         </Link>
 
         <div className="grid gap-8 lg:grid-cols-[300px_1fr]">
-          {/* Image placeholder */}
           <div className="overflow-hidden rounded-xl border bg-muted">
             <div className="flex aspect-square items-center justify-center text-muted-foreground">
               {comparison.componentName}
             </div>
           </div>
 
-          {/* Info */}
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{comparison.componentName}</h1>
             <p className="mt-1 text-muted-foreground">
-              Best price: {comparison.lowestPrice != null ? formatCurrency(comparison.lowestPrice) : "N/A"}
+              {t("bestPrice")}: {comparison.lowestPrice != null ? formatCurrency(comparison.lowestPrice) : "N/A"}
             </p>
 
-            {/* Price comparison table */}
             <div className="mt-6 overflow-x-auto rounded-xl border bg-card">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b text-left text-muted-foreground">
-                    <th className="px-4 py-3">Shop</th>
-                    <th className="px-4 py-3">Price</th>
-                    <th className="px-4 py-3">Discount</th>
-                    <th className="px-4 py-3">Status</th>
+                    <th className="px-4 py-3">{t("shop")}</th>
+                    <th className="px-4 py-3">{t("price")}</th>
+                    <th className="px-4 py-3">{t("discount")}</th>
+                    <th className="px-4 py-3">{t("status")}</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -154,7 +152,7 @@ export default function ComponentDetailPage({
                       </td>
                       <td className="px-4 py-3">
                         <span className={`text-xs ${p.inStock ? "text-green-600" : "text-red-500"}`}>
-                          {p.inStock ? "In stock" : "Out of stock"}
+                          {p.inStock ? t("inStock") : t("outOfStock")}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -164,7 +162,7 @@ export default function ComponentDetailPage({
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
                         >
-                          Buy <ExternalLink size={12} />
+                          {t("buy")} <ExternalLink size={12} />
                         </a>
                       </td>
                     </tr>
@@ -173,33 +171,18 @@ export default function ComponentDetailPage({
               </table>
             </div>
 
-            {/* Price history chart */}
             {chartData.length > 0 && (
               <div className="mt-8 rounded-xl border bg-card p-6">
-                <h2 className="mb-4 text-lg font-semibold">Price History</h2>
+                <h2 className="mb-4 text-lg font-semibold">{t("priceHistory")}</h2>
                 <div className="h-72">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
                       <XAxis dataKey="date" fontSize={12} />
-                      <YAxis
-                        fontSize={12}
-                        tickFormatter={(v: number) => formatCurrency(v)}
-                        width={80}
-                      />
-                      <Tooltip
-                        formatter={(value) => formatCurrency(Number(value))}
-                        labelStyle={{ fontWeight: 600 }}
-                      />
+                      <YAxis fontSize={12} tickFormatter={(v: number) => formatCurrency(v)} width={80} />
+                      <Tooltip formatter={(value) => formatCurrency(Number(value))} labelStyle={{ fontWeight: 600 }} />
                       <Legend />
                       {shopKeys.map((shop, i) => (
-                        <Line
-                          key={shop}
-                          type="monotone"
-                          dataKey={shop}
-                          stroke={LINE_COLORS[i % LINE_COLORS.length]}
-                          strokeWidth={2}
-                          dot={false}
-                        />
+                        <Line key={shop} type="monotone" dataKey={shop} stroke={LINE_COLORS[i % LINE_COLORS.length]} strokeWidth={2} dot={false} />
                       ))}
                     </LineChart>
                   </ResponsiveContainer>
@@ -209,7 +192,7 @@ export default function ComponentDetailPage({
 
             {chartData.length === 0 && (
               <div className="mt-8 rounded-xl border bg-card p-6 text-center text-muted-foreground">
-                No price history data yet. Check back after the next scraper run.
+                {t("noHistory")}
               </div>
             )}
           </div>

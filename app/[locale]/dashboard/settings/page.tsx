@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Bell, Save, Check } from "lucide-react";
 
 type EmailSettings = {
@@ -46,6 +47,7 @@ function Toggle({
 }
 
 export default function SettingsPage() {
+  const t = useTranslations("dashboard");
   const [settings, setSettings] = useState<EmailSettings>({
     priceAlerts: false,
     weeklyDigest: false,
@@ -65,8 +67,8 @@ export default function SettingsPage() {
         }
         setSettings(data);
       })
-      .catch(() => setError("Failed to load settings"));
-  }, []);
+      .catch(() => setError(t("common:error")));
+  }, [t]);
 
   async function onSave() {
     setSaving(true);
@@ -87,7 +89,7 @@ export default function SettingsPage() {
       setSettings(data);
       setSaved(true);
     } catch {
-      setError("Failed to save settings");
+      setError(t("common:error"));
     } finally {
       setSaving(false);
     }
@@ -102,27 +104,27 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <h2 className="text-lg font-semibold flex items-center gap-2">
         <Bell className="h-5 w-5 text-muted-foreground" />
-        Email Settings
+        {t("emailSettings")}
       </h2>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
       <div className="space-y-3 max-w-lg">
         <Toggle
-          label="Price Alerts"
-          description="Get notified when favorited components drop in price."
+          label={t("priceAlerts")}
+          description={t("priceAlertsDesc")}
           checked={settings.priceAlerts}
           onChange={(v) => update("priceAlerts", v)}
         />
         <Toggle
-          label="Weekly Digest"
-          description="A weekly roundup of trending setups and new components."
+          label={t("weeklyDigest")}
+          description={t("weeklyDigestDesc")}
           checked={settings.weeklyDigest}
           onChange={(v) => update("weeklyDigest", v)}
         />
         <Toggle
-          label="Promotions"
-          description="Special deals and affiliate offers from partner shops."
+          label={t("promotions")}
+          description={t("promotionsDesc")}
           checked={settings.promotions}
           onChange={(v) => update("promotions", v)}
         />
@@ -131,7 +133,7 @@ export default function SettingsPage() {
       {saved && (
         <p className="flex items-center gap-1 text-sm text-emerald-600">
           <Check className="h-4 w-4" />
-          Settings saved!
+          {t("saved")}
         </p>
       )}
 
@@ -141,7 +143,7 @@ export default function SettingsPage() {
         className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:opacity-50"
       >
         <Save className="h-4 w-4" />
-        {saving ? "Saving..." : "Save Changes"}
+        {saving ? t("saving") : t("saveChanges")}
       </button>
     </div>
   );

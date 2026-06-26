@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
+import { useTranslations } from "next-intl";
 import { User, Heart, Layers, ThumbsUp, Save, Check, Camera, X, MapPin, FileText } from "lucide-react";
 
 type Profile = {
@@ -18,6 +19,7 @@ type Profile = {
 };
 
 export default function ProfilePage() {
+  const t = useTranslations("dashboard");
   const { data: session, update: updateSession } = useSession();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
@@ -44,8 +46,8 @@ export default function ProfilePage() {
         setLocation(data.location ?? "");
         setImage(data.image ?? null);
       })
-      .catch(() => setError("Failed to load profile"));
-  }, []);
+      .catch(() => setError(t("common:error")));
+  }, [t]);
 
   async function onSave(e: React.FormEvent) {
     e.preventDefault();
@@ -72,7 +74,7 @@ export default function ProfilePage() {
       setSaved(true);
       await updateSession();
     } catch {
-      setError("Failed to save profile");
+      setError(t("common:error"));
     } finally {
       setSaving(false);
     }
@@ -82,13 +84,12 @@ export default function ProfilePage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validate
     if (!file.type.startsWith("image/")) {
-      setError("Please select an image file.");
+      setError(t("invalidImage"));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError("Image must be under 5MB.");
+      setError(t("imageTooLarge"));
       return;
     }
 
@@ -112,10 +113,9 @@ export default function ProfilePage() {
       setProfile((prev) => prev ? { ...prev, image: data.image } : prev);
       await updateSession();
     } catch {
-      setError("Failed to upload image.");
+      setError(t("uploadFailed"));
     } finally {
       setUploading(false);
-      // Reset input so the same file can be re-selected
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
@@ -141,9 +141,9 @@ export default function ProfilePage() {
       {/* Stats Cards */}
       <div className="grid gap-4 sm:grid-cols-3">
         {[
-          { label: "Setups", value: profile.setupCount, icon: Layers, color: "text-blue-500" },
-          { label: "Favorites", value: profile.favoriteCount, icon: Heart, color: "text-rose-500" },
-          { label: "Likes Received", value: profile.likeCount, icon: ThumbsUp, color: "text-emerald-500" },
+          { label: t("setupCount"), value: profile.setupCount, icon: Layers, color: "text-blue-500" },
+          { label: t("favoriteCount"), value: profile.favoriteCount, icon: Heart, color: "text-rose-500" },
+          { label: t("likeCount"), value: profile.likeCount, icon: ThumbsUp, color: "text-emerald-500" },
         ].map((stat) => {
           const Icon = stat.icon;
           return (
@@ -166,11 +166,10 @@ export default function ProfilePage() {
       <div className="rounded-xl border bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <Camera className="h-5 w-5 text-muted-foreground" />
-          Profile Photo
+          {t("profilePhoto")}
         </h2>
 
         <div className="flex items-start gap-6">
-          {/* Avatar Preview */}
           <div className="relative group">
             <div className="h-24 w-24 rounded-full border-2 border-border overflow-hidden bg-muted">
               {image ? (
@@ -183,13 +182,12 @@ export default function ProfilePage() {
               )}
             </div>
 
-            {/* Upload overlay */}
             <button
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={uploading}
               className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity disabled:opacity-50"
-              title="Upload photo"
+              title={t("uploadPhoto")}
             >
               {uploading ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent" />
@@ -199,7 +197,6 @@ export default function ProfilePage() {
             </button>
           </div>
 
-          {/* Upload controls */}
           <div className="space-y-2">
             <input
               ref={fileInputRef}
@@ -215,7 +212,7 @@ export default function ProfilePage() {
                 disabled={uploading}
                 className="rounded-lg border border-border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
               >
-                {uploading ? "Uploading..." : "Choose File"}
+                {uploading ? t("uploading") : t("chooseFile")}
               </button>
               {image && (
                 <button
@@ -224,13 +221,11 @@ export default function ProfilePage() {
                   className="inline-flex items-center gap-1 rounded-lg border border-destructive/30 px-3 py-1.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
                 >
                   <X className="h-3.5 w-3.5" />
-                  Remove
+                  {t("remove")}
                 </button>
               )}
             </div>
-            <p className="text-xs text-muted-foreground">
-              JPEG, PNG, WebP, or GIF. Max 5MB.
-            </p>
+            <p className="text-xs text-muted-foreground">{t("avatarHint")}</p>
           </div>
         </div>
       </div>
@@ -239,12 +234,12 @@ export default function ProfilePage() {
       <div className="rounded-xl border bg-card p-6 shadow-sm">
         <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
           <User className="h-5 w-5 text-muted-foreground" />
-          Personal Information
+          {t("personalInfo")}
         </h2>
 
         <form onSubmit={onSave} className="space-y-4 max-w-lg">
           <div>
-            <label htmlFor="name" className="block text-sm font-medium mb-1">Name</label>
+            <label htmlFor="name" className="block text-sm font-medium mb-1">{t("name")}</label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
@@ -253,13 +248,13 @@ export default function ProfilePage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background pl-10 pr-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
-                placeholder="Your display name"
+                placeholder={t("namePlaceholder")}
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="email" className="block text-sm font-medium mb-1">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium mb-1">{t("email")}</label>
             <input
               id="email"
               type="email"
@@ -267,11 +262,11 @@ export default function ProfilePage() {
               disabled
               className="w-full rounded-lg border border-border bg-muted/50 px-3 py-2 text-sm text-muted-foreground cursor-not-allowed"
             />
-            <p className="mt-1 text-xs text-muted-foreground">Email cannot be changed.</p>
+            <p className="mt-1 text-xs text-muted-foreground">{t("emailCannotChange")}</p>
           </div>
 
           <div>
-            <label htmlFor="location" className="block text-sm font-medium mb-1">Location</label>
+            <label htmlFor="location" className="block text-sm font-medium mb-1">{t("location")}</label>
             <div className="relative">
               <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input
@@ -280,14 +275,14 @@ export default function ProfilePage() {
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="w-full rounded-lg border border-border bg-background pl-10 pr-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20"
-                placeholder="e.g. Ho Chi Minh City"
+                placeholder={t("locationPlaceholder")}
                 maxLength={100}
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="bio" className="block text-sm font-medium mb-1">Bio</label>
+            <label htmlFor="bio" className="block text-sm font-medium mb-1">{t("bio")}</label>
             <div className="relative">
               <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <textarea
@@ -297,7 +292,7 @@ export default function ProfilePage() {
                 rows={3}
                 maxLength={280}
                 className="w-full rounded-lg border border-border bg-background pl-10 pr-3 py-2 text-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary/20 resize-none"
-                placeholder="Tell people about your workspace..."
+                placeholder={t("bioPlaceholder")}
               />
             </div>
             <p className="mt-1 text-xs text-muted-foreground text-right">{bio.length}/280</p>
@@ -308,7 +303,7 @@ export default function ProfilePage() {
           {saved && (
             <p className="flex items-center gap-1 text-sm text-emerald-600">
               <Check className="h-4 w-4" />
-              Profile saved!
+              {t("saved")}
             </p>
           )}
 
@@ -318,7 +313,7 @@ export default function ProfilePage() {
             className="inline-flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all hover:bg-primary/90 disabled:opacity-50"
           >
             <Save className="h-4 w-4" />
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? t("saving") : t("saveChanges")}
           </button>
         </form>
       </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import type { VisualizeResult } from "@/modules/visualize";
 import { Sparkles, DollarSign, ExternalLink, AlertCircle, Wand2, Layers } from "lucide-react";
 
@@ -16,6 +17,7 @@ const SHOP_COLOR: Record<string, string> = {
 };
 
 export default function VisualizeClient() {
+  const t = useTranslations("visualize");
   const [query, setQuery] = useState("");
   const [roomType, setRoomType] = useState<string>("");
   const [maxPrice, setMaxPrice] = useState("");
@@ -39,10 +41,10 @@ export default function VisualizeClient() {
         }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json?.error?.message ?? "Request failed");
+      if (!res.ok) throw new Error(json?.error?.message ?? t("requestFailed"));
       setResult(json as VisualizeResult);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Something went wrong");
+      setError(err instanceof Error ? err.message : t("somethingWrong"));
     } finally {
       setLoading(false);
     }
@@ -54,13 +56,13 @@ export default function VisualizeClient() {
         <div className="space-y-2">
           <label htmlFor="query" className="text-sm font-semibold tracking-wide text-foreground flex items-center gap-1.5">
             <Wand2 className="h-4 w-4 text-primary" />
-            Describe your dream setup
+            {t("describeLabel")}
           </label>
           <textarea
             id="query"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="e.g. cozy warm-light gaming corner with a walnut wood desk and plants"
+            placeholder={t("placeholder")}
             rows={3}
             required
             minLength={3}
@@ -71,7 +73,7 @@ export default function VisualizeClient() {
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-1.5">
             <label htmlFor="room" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
-              Room Type
+              {t("roomType")}
             </label>
             <select
               id="room"
@@ -81,7 +83,7 @@ export default function VisualizeClient() {
             >
               {ROOM_TYPES.map((r) => (
                 <option key={r || "any"} value={r}>
-                  {r ? r.replace("_", " ").toUpperCase() : "ANY TYPE"}
+                  {r ? r.replace("_", " ").toUpperCase() : t("anyType")}
                 </option>
               ))}
             </select>
@@ -89,7 +91,7 @@ export default function VisualizeClient() {
           <div className="space-y-1.5">
             <label htmlFor="price" className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
               <DollarSign className="h-3.5 w-3.5" />
-              Max Price / Item (VND)
+              {t("maxPrice")}
             </label>
             <input
               id="price"
@@ -97,7 +99,7 @@ export default function VisualizeClient() {
               min={0}
               value={maxPrice}
               onChange={(e) => setMaxPrice(e.target.value)}
-              placeholder="e.g. 5000000"
+              placeholder={t("pricePlaceholder")}
               className="w-full rounded-xl border border-border bg-background/50 p-2.5 text-sm font-medium focus:border-primary focus:outline-none"
             />
           </div>
@@ -111,12 +113,12 @@ export default function VisualizeClient() {
           {loading ? (
             <>
               <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              <span>Generating Layout...</span>
+              <span>{t("generating")}</span>
             </>
           ) : (
             <>
               <Sparkles className="h-4 w-4 text-amber-300 transition-transform group-hover:scale-110" />
-              <span>Visualize My Room</span>
+              <span>{t("generate")}</span>
             </>
           )}
         </button>
@@ -131,34 +133,32 @@ export default function VisualizeClient() {
 
       {result && (
         <div className="grid gap-8 md:grid-cols-12 items-start animate-in slide-in-from-bottom-5 duration-500">
-          {/* Generated Image Frame */}
           <div className="md:col-span-7 space-y-3">
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
               <Layers className="h-4 w-4" />
-              Generated Concept
+              {t("generatedConcept")}
             </h2>
             {result.image ? (
               <div className="overflow-hidden rounded-2xl border border-border shadow-lg bg-card group relative">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={result.image}
-                  alt="Generated room visualization"
+                  alt={t("generatedAlt")}
                   className="w-full object-cover transition-transform duration-500 group-hover:scale-[1.01]"
                 />
               </div>
             ) : (
               <div className="rounded-2xl border border-dashed p-10 text-center bg-card/30">
                 <p className="text-sm text-muted-foreground">
-                  No matching items found to visualize. Try adjusting description query.
+                  {t("noMatchingItems")}
                 </p>
               </div>
             )}
           </div>
 
-          {/* Extracted Items */}
           <div className="md:col-span-5 space-y-4">
             <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground">
-              Matching Items ({result.items.length})
+              {t("matchingItems", { count: result.items.length })}
             </h2>
             {result.items.length > 0 ? (
               <div className="space-y-3 max-h-[500px] overflow-y-auto pr-1">
@@ -180,7 +180,7 @@ export default function VisualizeClient() {
                         </span>
                         <span className="text-[10px] text-muted-foreground font-semibold">•</span>
                         <span className="text-[10px] text-primary font-bold">
-                          {(item.similarity * 100).toFixed(0)}% match
+                          {(item.similarity * 100).toFixed(0)}% {t("match")}
                         </span>
                       </div>
                       {item.offer ? (
@@ -194,7 +194,7 @@ export default function VisualizeClient() {
                             rel="noopener noreferrer nofollow sponsored"
                             className="inline-flex items-center gap-1 rounded-lg bg-primary px-3 py-1.5 text-[10px] font-bold text-primary-foreground transition-colors hover:bg-primary/90"
                           >
-                            <span>Buy</span>
+                            <span>{t("buy")}</span>
                             <span className={`px-1 rounded text-[8px] font-extrabold uppercase ${SHOP_COLOR[item.offer.shop.toLowerCase()] || "bg-muted text-muted-foreground"}`}>
                               {item.offer.shop}
                             </span>
@@ -202,14 +202,14 @@ export default function VisualizeClient() {
                           </a>
                         </div>
                       ) : (
-                        <p className="text-[10px] text-muted-foreground italic">No price available</p>
+                        <p className="text-[10px] text-muted-foreground italic">{t("noPrice")}</p>
                       )}
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-muted-foreground italic">No visual components linked.</p>
+              <p className="text-xs text-muted-foreground italic">{t("noVisualComponents")}</p>
             )}
           </div>
         </div>
@@ -217,4 +217,3 @@ export default function VisualizeClient() {
     </div>
   );
 }
-

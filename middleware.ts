@@ -6,26 +6,47 @@ const PUBLIC_PATHS = ["/signin", "/signup", "/api", "/community", "/welcome"];
 
 function isPublic(pathname: string) {
   if (pathname === "/") return true;
-  return PUBLIC_PATHS.some((p) => pathname.startsWith(p));
+  // Strip locale prefix for checking
+  const withoutLocale = pathname.replace(/^\/(en|vi)/, "") || "/";
+  return PUBLIC_PATHS.some((p) => withoutLocale.startsWith(p));
+}
+
+function getPathnameLocale(pathname: string): Locale | null {
+  const firstSegment = pathname.split("/")[1];
+  return locales.includes(firstSegment as Locale) ? (firstSegment as Locale) : null;
 }
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  // --- i18n: ensure locale cookie is set ---
-  const localeCookie = req.cookies.get("NEXT_LOCALE")?.value;
-  if (!localeCookie || !locales.includes(localeCookie as (typeof locales)[number])) {
-    const acceptLang = req.headers.get("accept-language");
+  // --- i18n: redirect to locale-prefixed path if missing ---
+  const pathnameLocale = getPathnameLocale(pathname);
+  if (!pathnameLocale) {
+    const localeCookie = req.cookies.get("NEXT_LOCALE")?.value;
     let locale: Locale = defaultLocale;
-    if (acceptLang) {
-      const preferred = acceptLang.split(",")[0].trim().split("-")[0];
-      if (locales.includes(preferred as Locale)) {
-        locale = preferred as Locale;
+    if (localeCookie && locales.includes(localeCookie as Locale)) {
+      locale = localeCookie as Locale;
+    } else {
+      const acceptLang = req.headers.get("accept-language");
+      if (acceptLang) {
+        const preferred = acceptLang.split(",")[0].trim().split("-")[0];
+        if (locales.includes(preferred as Locale)) {
+          locale = preferred as Locale;
+        }
       }
     }
-    // Set cookie on every response (first visit + persisting preference)
-    const response = NextResponse.next();
+    const url = req.nextUrl.clone();
+    url.pathname = `/${locale}${pathname === "/" ? "" : pathname}`;
+    const response = NextResponse.redirect(url);
     response.cookies.set("NEXT_LOCALE", locale, { path: "/", maxAge: 31536000 });
+    return response;
+  }
+
+  // Set cookie if not already set (for direct visits to /vi or /en)
+  const localeCookie = req.cookies.get("NEXT_LOCALE")?.value;
+  if (!localeCookie) {
+    const response = NextResponse.next();
+    response.cookies.set("NEXT_LOCALE", pathnameLocale, { path: "/", maxAge: 31536000 });
     return response;
   }
 
@@ -41,13 +62,13 @@ export async function middleware(req: NextRequest) {
     const token = await getToken({ req, secret: process.env.NEXTAUTH_SECRET });
     if (!token) {
       const url = req.nextUrl.clone();
-      url.pathname = "/signin";
+      url.pathname = `/${pathnameLocale}/signin`;
       url.searchParams.set("callbackUrl", pathname);
       return NextResponse.redirect(url);
     }
 
     if (pathname.startsWith("/admin") && token.role !== "admin") {
-      return NextResponse.redirect(new URL("/", req.url));
+      return NextResponse.redirect(new URL(`/${pathnameLocale}`, req.url));
     }
   }
 
