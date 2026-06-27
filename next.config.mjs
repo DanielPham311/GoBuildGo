@@ -1,10 +1,3 @@
-// Note: spec (docs/PROJECT_STRUCTURE.md) names this next.config.ts, but TS config
-// requires Next 15. On Next 14 the config must be .mjs/.js.
-
-import createNextIntlPlugin from "next-intl/plugin";
-
-const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
-
 const securityHeaders = [
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
@@ -26,4 +19,4 @@ const nextConfig = {
   },
 };
 
-export default withNextIntl(nextConfig);
+export default nextConfig;

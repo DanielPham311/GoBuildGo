@@ -4,6 +4,10 @@
  * Strategy: search-only for Shopee/Lazada/Tiki (scrape blocked),
  * search + scrape fallback for PhongVu/GearVN.
  *
+ * NOTE: Firecrawl's /search does NOT support Google `site:` operators.
+ * Queries must be plain Vietnamese product keywords — Firecrawl returns
+ * organic results from VN shops (Shopee, Lazada, Tiki, PhongVu, GearVN).
+ *
  * 12 queries × 1 credit/search = ~12 credits/run.
  * Daily schedule: ~360 credits/month (within 1000 free tier).
  */
@@ -15,72 +19,72 @@ export type SearchQuery = {
 };
 
 export const SEARCH_QUERIES: SearchQuery[] = [
-  // Desks — shopee/lazada have best price-in-description coverage
+  // Desks
   {
-    query: "bàn gaming bàn làm việc giá site:shopee.vn",
+    query: "bàn gaming bàn làm việc giá rẻ",
     category: "desk",
     limit: 10,
   },
   {
-    query: "bàn gaming giá rẻ site:lazada.vn",
+    query: "bàn máy tính gaming giá rẻ Việt Nam",
     category: "desk",
     limit: 10,
   },
   {
-    query: "standing desk adjustable site:gearvn.com",
+    query: "standing desk adjustable giá rẻ",
     category: "desk",
     limit: 10,
   },
 
   // Chairs
   {
-    query: "ghế gaming giá rẻ site:shopee.vn",
+    query: "ghế gaming ghế công thái học giá rẻ",
     category: "chair",
     limit: 10,
   },
   {
-    query: "gaming chair ergonomic site:lazada.vn",
+    query: "gaming chair ergonomic Việt Nam",
     category: "chair",
     limit: 10,
   },
   {
-    query: "ghế gaming giá site:gearvn.com",
+    query: "ghế xoay văn phòng giá rẻ",
     category: "chair",
     limit: 10,
   },
 
   // Monitors
   {
-    query: "màn hình gaming giá site:shopee.vn",
+    query: "màn hình gaming 27 inch giá rẻ",
     category: "monitor",
     limit: 10,
   },
   {
-    query: "gaming monitor 27 inch site:lazada.vn",
+    query: "gaming monitor 144hz Việt Nam",
     category: "monitor",
     limit: 10,
   },
 
   // Keyboards
   {
-    query: "bàn phím cơ giá rẻ site:shopee.vn",
+    query: "bàn phím cơ gaming giá rẻ",
     category: "keyboard",
     limit: 10,
   },
   {
-    query: "mechanical keyboard site:lazada.vn",
+    query: "mechanical keyboard switch blue Việt Nam",
     category: "keyboard",
     limit: 10,
   },
 
   // Mice
   {
-    query: "chuột gaming giá rẻ site:shopee.vn",
+    query: "chuột gaming chơi game giá rẻ",
     category: "mouse",
     limit: 10,
   },
   {
-    query: "gaming mouse wireless site:lazada.vn",
+    query: "gaming mouse wireless Việt Nam",
     category: "mouse",
     limit: 10,
   },
