@@ -2,6 +2,7 @@ import { PrismaClient } from "@prisma/client";
 import { getAllScrapers } from "./scrapers";
 import { cleanProduct } from "./scrapers/clean";
 import { findDuplicate } from "./scrapers/dedup";
+import { SEARCH_QUERIES } from "./scrapers/queries";
 import { slugify } from "@/lib/utils";
 
 const prisma = new PrismaClient();
@@ -115,10 +116,14 @@ async function upsertProduct(product: ReturnType<typeof cleanProduct>): Promise<
 }
 
 async function main() {
-  const queries = (process.argv[2] ?? "gaming desk,gaming chair,mechanical keyboard,mouse,monitor,desk lamp")
-    .split(",")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  // Use SEARCH_QUERIES from config (proper Vietnamese keywords + categories)
+  // CLI args override: comma-separated query strings
+  const cliQueries = process.argv[2]
+    ? process.argv[2].split(",").map((s) => s.trim()).filter(Boolean)
+    : null;
+
+  const queries = cliQueries ?? SEARCH_QUERIES.map((q) => q.query);
+  const queryCategoryMap = new Map(SEARCH_QUERIES.map((q) => [q.query, q.category]));
 
   const scrapers = getAllScrapers();
   console.log(`Running ${scrapers.length} scraper(s) for ${queries.length} queries…`);
@@ -136,9 +141,14 @@ async function main() {
     const scraperStartedAt = Date.now();
 
     for (const query of queries) {
+      // Pass the limit from SEARCH_QUERIES config, or default 10 for CLI queries
+      const limit = queryCategoryMap.has(query)
+        ? (SEARCH_QUERIES.find((q) => q.query === query)?.limit ?? 10)
+        : 10;
+
       try {
         console.log(`  [${scraper.name}] Searching: "${query}"`);
-        const rawItems = await scraper.search(query, 10);
+        const rawItems = await scraper.search(query, limit);
         console.log(`    Found ${rawItems.length} items`);
 
         for (const raw of rawItems) {

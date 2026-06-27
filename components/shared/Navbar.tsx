@@ -1,24 +1,16 @@
 "use client";
 
-import { Link, usePathname, useRouter } from "@/i18n/navigation";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { useLocale, useTranslations } from "next-intl";
 import { Laptop, Sparkles, LogOut, User as UserIcon, Users, Palette, LayoutDashboard, Monitor } from "lucide-react";
-import { localeNames } from "@/i18n/config";
 
 export default function Navbar() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const user = session?.user as { name?: string | null; email?: string | null; role?: string } | undefined;
   const isAdmin = user?.role === "admin";
-  const currentLocale = useLocale();
-  const t = useTranslations("nav");
   const pathname = usePathname();
-
-  function switchLocale(locale: string) {
-    document.cookie = `NEXT_LOCALE=${locale};path=/;max-age=31536000`;
-    router.push(`/${locale}${pathname}`);
-  }
 
   const linkClass = (href: string) => {
     const isActive = pathname === href;
@@ -46,19 +38,19 @@ export default function Navbar() {
             <Link href="/components" className={linkClass("/components")}>
               <span className="flex items-center gap-1.5">
                 <Monitor className="h-3.5 w-3.5" />
-                {t("components")}
+                Components
               </span>
             </Link>
             <Link href="/community" className={linkClass("/community")}>
               <span className="flex items-center gap-1.5">
                 <Users className="h-3.5 w-3.5" />
-                {t("community")}
+                Community
               </span>
             </Link>
             <Link href="/themes" className={linkClass("/themes")}>
               <span className="flex items-center gap-1.5">
                 <Palette className="h-3.5 w-3.5" />
-                {t("themes")}
+                Themes
               </span>
             </Link>
             {status === "authenticated" && (
@@ -66,21 +58,21 @@ export default function Navbar() {
                 <Link href="/visualize" className={linkClass("/visualize")}>
                   <span className="flex items-center gap-1.5">
                     <Sparkles className="h-3.5 w-3.5" />
-                    {t("visualize")}
+                    Visualize
                   </span>
                 </Link>
                 <Link href="/planner" className={linkClass("/planner")}>
-                  {t("planner")}
+                  Planner
                 </Link>
                 <Link href="/dashboard" className={linkClass("/dashboard")}>
                   <span className="flex items-center gap-1.5">
                     <LayoutDashboard className="h-3.5 w-3.5" />
-                    {t("dashboard")}
+                    Dashboard
                   </span>
                 </Link>
                 {isAdmin && (
                   <Link href="/admin" className={linkClass("/admin")}>
-                    {t("admin")}
+                    Admin
                   </Link>
                 )}
               </>
@@ -88,25 +80,8 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Right side: locale switcher + user */}
+        {/* Right side: user */}
         <div className="flex items-center gap-4">
-          {/* Locale Switcher */}
-          <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-0.5">
-            {Object.entries(localeNames).map(([code, name]) => (
-              <button
-                key={code}
-                onClick={() => switchLocale(code)}
-                className={`flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition-colors ${
-                  currentLocale === code
-                    ? "bg-background text-foreground shadow-sm"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {code === "vi" ? "🇻🇳" : "🇬🇧"}
-                <span className="hidden sm:inline">{name}</span>
-              </button>
-            ))}
-          </div>
           {status === "loading" && (
             <div className="h-4 w-8 animate-pulse rounded bg-muted" />
           )}
@@ -114,13 +89,13 @@ export default function Navbar() {
           {status === "unauthenticated" && (
             <div className="flex items-center gap-3">
               <Link href="/signin" className="text-sm font-medium text-muted-foreground hover:text-foreground">
-                {t("login")}
+                Log in
               </Link>
               <Link
                 href="/signup"
                 className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground shadow-sm transition-all duration-300 hover:bg-primary/95 hover:shadow"
               >
-                {t("signup")}
+                Sign up
               </Link>
             </div>
           )}
@@ -144,7 +119,7 @@ export default function Navbar() {
                 className="flex items-center gap-1 text-sm font-medium text-muted-foreground transition-colors hover:text-destructive"
               >
                 <LogOut className="h-4 w-4" />
-                <span className="hidden sm:inline">{t("logout")}</span>
+                <span className="hidden sm:inline">Log out</span>
               </button>
             </div>
           )}
