@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
   // Fire-and-forget click recording
   recordClick({
     componentId: payload.componentId,
-    shop: Shop.shopee, // default; could be encoded in payload later
+    shop: Shop.goodspace, // default; could be encoded in payload later
     setupId: payload.setupId ?? undefined,
     userId: undefined,
     referrer: req.headers.get("referer") ?? undefined,

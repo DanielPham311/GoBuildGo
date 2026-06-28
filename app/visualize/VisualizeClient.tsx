@@ -7,12 +7,8 @@ import { Sparkles, DollarSign, ExternalLink, AlertCircle, Wand2, Layers } from "
 const ROOM_TYPES = ["", "bedroom", "gaming_room", "office", "studio"] as const;
 
 const SHOP_COLOR: Record<string, string> = {
-  shopee: "bg-[#FF5722]/10 text-[#FF5722]",
-  lazada: "bg-[#000080]/10 text-[#000080]",
-  tiki: "bg-[#1890FF]/10 text-[#1890FF]",
-  phongvu: "bg-[#0052CC]/10 text-[#0052CC]",
-  gearvn: "bg-[#E60012]/10 text-[#E60012]",
-  nhaxinh: "bg-[#5D4037]/10 text-[#5D4037]",
+  goodspace: "bg-[#10B981]/10 text-[#10B981]",
+  apshop: "bg-[#7C3AED]/10 text-[#7C3AED]",
 };
 
 export default function VisualizeClient() {

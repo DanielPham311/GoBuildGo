@@ -2,7 +2,7 @@ import type { PrismaClient, Prisma } from "@prisma/client";
 import { slugify } from "@/lib/utils";
 
 type SeedPrice = {
-  shop: "shopee" | "lazada" | "tiki" | "phongvu" | "gearvn" | "nhaxinh";
+  shop: "goodspace" | "apshop";
   price: number;
   originalPrice?: number;
   url: string;
@@ -33,8 +33,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["white", "brown"],
     styleTags: ["scandinavian", "minimal"],
     prices: [
-      { shop: "shopee", price: 2490000, url: "https://shopee.vn/product/ikea-bekant-desk", shopName: "IKEA Vietnam Official" },
-      { shop: "lazada", price: 2650000, originalPrice: 2990000, url: "https://www.lazada.vn/products/ikea-bekant.html", shopName: "IKEA Store" },
+      { shop: "goodspace", price: 2490000, url: "https://goodspace.art/ban-nang-ha/ikea-bekant", shopName: "GoodSpace" },
     ],
   },
   {
@@ -46,8 +45,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "white"],
     styleTags: ["modern", "professional"],
     prices: [
-      { shop: "shopee", price: 8990000, url: "https://shopee.vn/product/flexispot-e7-pro", shopName: "FlexiSpot Official" },
-      { shop: "lazada", price: 9250000, originalPrice: 10990000, url: "https://www.lazada.vn/products/flexispot-e7.html", shopName: "FlexiSpot Lazada" },
+      { shop: "goodspace", price: 8990000, url: "https://goodspace.art/ban-nang-ha/flexispot-e7", shopName: "GoodSpace" },
     ],
   },
   {
@@ -59,7 +57,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["gaming", "premium"],
     prices: [
-      { shop: "shopee", price: 12900000, url: "https://shopee.vn/product/secretlab-magnus-pro", shopName: "Secretlab Official" },
+      { shop: "goodspace", price: 12900000, url: "https://goodspace.art/ban-nang-ha/secretlab-magnus", shopName: "GoodSpace" },
     ],
   },
   {
@@ -71,8 +69,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["white"],
     styleTags: ["modern", "smart"],
     prices: [
-      { shop: "shopee", price: 7490000, url: "https://shopee.vn/product/xiaomi-smart-desk", shopName: "Xiaomi Official Store" },
-      { shop: "tiki", price: 7290000, url: "https://tiki.vn/xiaomi-smart-desk-p123456.html", shopName: "Xiaomi Flagship" },
+      { shop: "goodspace", price: 7490000, url: "https://goodspace.art/ban-nang-ha/xiaomi-smart-desk", shopName: "GoodSpace" },
     ],
   },
 
@@ -86,8 +83,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "white"],
     styleTags: ["gaming", "premium"],
     prices: [
-      { shop: "shopee", price: 11900000, url: "https://shopee.vn/product/secretlab-titan-evo", shopName: "Secretlab Official" },
-      { shop: "lazada", price: 12490000, originalPrice: 13900000, url: "https://www.lazada.vn/products/secretlab-titan.html", shopName: "Secretlab Store" },
+      { shop: "goodspace", price: 11900000, url: "https://goodspace.art/ghe-cong-thai-hoc/secretlab-titan", shopName: "GoodSpace" },
     ],
   },
   {
@@ -99,7 +95,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "grey"],
     styleTags: ["office", "minimal"],
     prices: [
-      { shop: "shopee", price: 3990000, url: "https://shopee.vn/product/ikea-markus-chair", shopName: "IKEA Vietnam Official" },
+      { shop: "goodspace", price: 3990000, url: "https://goodspace.art/ghe-cong-thai-hoc/ikea-markus", shopName: "GoodSpace" },
     ],
   },
   {
@@ -111,8 +107,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["office", "ergonomic"],
     prices: [
-      { shop: "shopee", price: 3490000, url: "https://shopee.vn/product/sihoo-doro-s300", shopName: "Sihoo Official" },
-      { shop: "lazada", price: 3290000, originalPrice: 3990000, url: "https://www.lazada.vn/products/sihoo-doro.html", shopName: "Sihoo Lazada" },
+      { shop: "goodspace", price: 3490000, url: "https://goodspace.art/ghe-cong-thai-hoc/sihoo-doro", shopName: "GoodSpace" },
     ],
   },
   {
@@ -124,7 +119,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "grey"],
     styleTags: ["premium", "professional"],
     prices: [
-      { shop: "shopee", price: 38900000, url: "https://shopee.vn/product/herman-miller-aeron", shopName: "Office Chair Pro" },
+      { shop: "goodspace", price: 38900000, url: "https://goodspace.art/ghe-cong-thai-hoc/herman-miller-aeron", shopName: "GoodSpace" },
     ],
   },
 
@@ -138,8 +133,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["gaming", "professional"],
     prices: [
-      { shop: "shopee", price: 6990000, url: "https://shopee.vn/product/lg-27gp850", shopName: "LG Official Store" },
-      { shop: "lazada", price: 7290000, originalPrice: 8490000, url: "https://www.lazada.vn/products/lg-27gp850.html", shopName: "LG Flagship" },
+      { shop: "goodspace", price: 6990000, url: "https://goodspace.art/man-hinh/lg-27gp850", shopName: "GoodSpace" },
     ],
   },
   {
@@ -151,8 +145,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["gaming", "premium"],
     prices: [
-      { shop: "shopee", price: 10990000, url: "https://shopee.vn/product/samsung-odyssey-g7", shopName: "Samsung Official" },
-      { shop: "tiki", price: 10490000, url: "https://tiki.vn/samsung-odyssey-g7-p789.html", shopName: "Samsung Store" },
+      { shop: "goodspace", price: 10990000, url: "https://goodspace.art/man-hinh/samsung-odyssey-g7", shopName: "GoodSpace" },
     ],
   },
   {
@@ -164,8 +157,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "silver"],
     styleTags: ["professional", "minimal"],
     prices: [
-      { shop: "shopee", price: 11490000, url: "https://shopee.vn/product/dell-u2723qe", shopName: "Dell Official" },
-      { shop: "lazada", price: 11990000, originalPrice: 13990000, url: "https://www.lazada.vn/products/dell-u2723qe.html", shopName: "Dell Store" },
+      { shop: "goodspace", price: 11490000, url: "https://goodspace.art/man-hinh/dell-u2723qe", shopName: "GoodSpace" },
     ],
   },
   {
@@ -177,7 +169,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["professional", "creative"],
     prices: [
-      { shop: "shopee", price: 13990000, url: "https://shopee.vn/product/benq-ew3280u", shopName: "BenQ Official" },
+      { shop: "goodspace", price: 13990000, url: "https://goodspace.art/man-hinh/benq-ew3280u", shopName: "GoodSpace" },
     ],
   },
 
@@ -191,8 +183,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "grey"],
     styleTags: ["minimal", "professional"],
     prices: [
-      { shop: "shopee", price: 2490000, url: "https://shopee.vn/product/keychron-k8-pro", shopName: "Keychron Official" },
-      { shop: "lazada", price: 2690000, originalPrice: 2990000, url: "https://www.lazada.vn/products/keychron-k8.html", shopName: "Keychron Store" },
+      { shop: "goodspace", price: 2490000, url: "https://goodspace.art/ban-phim/keychron-k8-pro", shopName: "GoodSpace" },
     ],
   },
   {
@@ -204,7 +195,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["white", "grey"],
     styleTags: ["minimal", "premium"],
     prices: [
-      { shop: "shopee", price: 3290000, url: "https://shopee.vn/product/leopold-fc750r", shopName: "Leopold Store" },
+      { shop: "goodspace", price: 3290000, url: "https://goodspace.art/ban-phim/leopold-fc750r", shopName: "GoodSpace" },
     ],
   },
   {
@@ -216,8 +207,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["gaming", "professional"],
     prices: [
-      { shop: "shopee", price: 2190000, url: "https://shopee.vn/product/logitech-g-pro-x", shopName: "Logitech Official" },
-      { shop: "tiki", price: 2090000, url: "https://tiki.vn/logitech-g-pro-x-p456.html", shopName: "Logitech Store" },
+      { shop: "goodspace", price: 2190000, url: "https://goodspace.art/ban-phim/logitech-g-pro-x", shopName: "GoodSpace" },
     ],
   },
   {
@@ -229,7 +219,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["gaming", "rgb"],
     prices: [
-      { shop: "shopee", price: 4490000, url: "https://shopee.vn/product/razer-blackwidow-v4", shopName: "Razer Official" },
+      { shop: "goodspace", price: 4490000, url: "https://goodspace.art/ban-phim/razer-blackwidow-v4", shopName: "GoodSpace" },
     ],
   },
 
@@ -243,8 +233,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["white", "black"],
     styleTags: ["gaming", "professional"],
     prices: [
-      { shop: "shopee", price: 2990000, url: "https://shopee.vn/product/logitech-superlight-2", shopName: "Logitech Official" },
-      { shop: "lazada", price: 3190000, originalPrice: 3690000, url: "https://www.lazada.vn/products/logitech-superlight.html", shopName: "Logitech Store" },
+      { shop: "goodspace", price: 2990000, url: "https://goodspace.art/chuot/logitech-superlight-2", shopName: "GoodSpace" },
     ],
   },
   {
@@ -256,7 +245,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["gaming", "ergonomic"],
     prices: [
-      { shop: "shopee", price: 2490000, url: "https://shopee.vn/product/razer-deathadder-v3", shopName: "Razer Official" },
+      { shop: "goodspace", price: 2490000, url: "https://goodspace.art/chuot/razer-deathadder-v3", shopName: "GoodSpace" },
     ],
   },
   {
@@ -268,8 +257,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["white", "black"],
     styleTags: ["gaming", "minimal"],
     prices: [
-      { shop: "shopee", price: 1890000, url: "https://shopee.vn/product/pulsar-x2", shopName: "Pulsar Official" },
-      { shop: "lazada", price: 1990000, url: "https://www.lazada.vn/products/pulsar-x2.html", shopName: "Pulsar Store" },
+      { shop: "goodspace", price: 1890000, url: "https://goodspace.art/chuot/pulsar-x2", shopName: "GoodSpace" },
     ],
   },
   {
@@ -281,7 +269,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["gaming", "professional"],
     prices: [
-      { shop: "shopee", price: 2290000, url: "https://shopee.vn/product/zowie-ec2-c", shopName: "Zowie Official" },
+      { shop: "goodspace", price: 2290000, url: "https://goodspace.art/chuot/zowie-ec2-c", shopName: "GoodSpace" },
     ],
   },
 
@@ -295,8 +283,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "silver"],
     styleTags: ["minimal", "professional"],
     prices: [
-      { shop: "shopee", price: 2990000, url: "https://shopee.vn/product/benq-screenbar-halo", shopName: "BenQ Official" },
-      { shop: "lazada", price: 3190000, originalPrice: 3690000, url: "https://www.lazada.vn/products/benq-screenbar.html", shopName: "BenQ Store" },
+      { shop: "goodspace", price: 2990000, url: "https://goodspace.art/den/benq-screenbar-halo", shopName: "GoodSpace" },
     ],
   },
   {
@@ -308,7 +295,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["white"],
     styleTags: ["modern", "smart"],
     prices: [
-      { shop: "shopee", price: 1290000, url: "https://shopee.vn/product/xiaomi-desk-lamp-pro", shopName: "Xiaomi Official Store" },
+      { shop: "goodspace", price: 1290000, url: "https://goodspace.art/den/xiaomi-desk-lamp-pro", shopName: "GoodSpace" },
     ],
   },
   {
@@ -320,8 +307,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["gaming", "rgb"],
     prices: [
-      { shop: "shopee", price: 1990000, url: "https://shopee.vn/product/govee-rgbic-lamp", shopName: "Govee Official" },
-      { shop: "lazada", price: 1890000, originalPrice: 2490000, url: "https://www.lazada.vn/products/govee-rgbic.html", shopName: "Govee Store" },
+      { shop: "goodspace", price: 1990000, url: "https://goodspace.art/den/govee-rgbic-lamp", shopName: "GoodSpace" },
     ],
   },
 
@@ -335,7 +321,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["white", "black"],
     styleTags: ["minimal", "scandinavian"],
     prices: [
-      { shop: "shopee", price: 290000, url: "https://shopee.vn/product/ikea-lack-shelf", shopName: "IKEA Vietnam Official" },
+      { shop: "goodspace", price: 290000, url: "https://goodspace.art/phu-kien-va-setup/ikea-lack-shelf", shopName: "GoodSpace" },
     ],
   },
   {
@@ -347,8 +333,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["silver", "black"],
     styleTags: ["professional", "minimal"],
     prices: [
-      { shop: "shopee", price: 3490000, url: "https://shopee.vn/product/ergotron-m75", shopName: "Ergotron Official" },
-      { shop: "lazada", price: 3790000, originalPrice: 4290000, url: "https://www.lazada.vn/products/ergotron-m75.html", shopName: "Ergotron Store" },
+      { shop: "goodspace", price: 3490000, url: "https://goodspace.art/arm-man-hinh/ergotron-m75", shopName: "GoodSpace" },
     ],
   },
   {
@@ -360,7 +345,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "grey"],
     styleTags: ["gaming", "premium"],
     prices: [
-      { shop: "shopee", price: 1290000, url: "https://shopee.vn/product/secretlab-desk-mat", shopName: "Secretlab Official" },
+      { shop: "goodspace", price: 1290000, url: "https://goodspace.art/phu-kien-va-setup/secretlab-desk-mat", shopName: "GoodSpace" },
     ],
   },
 
@@ -374,8 +359,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "silver"],
     styleTags: ["premium", "minimal"],
     prices: [
-      { shop: "shopee", price: 7490000, url: "https://shopee.vn/product/sony-wh1000xm5", shopName: "Sony Official" },
-      { shop: "lazada", price: 7990000, originalPrice: 8990000, url: "https://www.lazada.vn/products/sony-wh1000xm5.html", shopName: "Sony Store" },
+      { shop: "goodspace", price: 7490000, url: "https://goodspace.art/tai-nghe/sony-wh1000xm5", shopName: "GoodSpace" },
     ],
   },
   {
@@ -387,7 +371,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "white"],
     styleTags: ["gaming", "rgb"],
     prices: [
-      { shop: "shopee", price: 2990000, url: "https://shopee.vn/product/logitech-g733", shopName: "Logitech Official" },
+      { shop: "goodspace", price: 2990000, url: "https://goodspace.art/tai-nghe/logitech-g733", shopName: "GoodSpace" },
     ],
   },
   {
@@ -399,8 +383,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black", "blue", "red"],
     styleTags: ["versatile", "modern"],
     prices: [
-      { shop: "shopee", price: 2490000, url: "https://shopee.vn/product/jbl-flip-6", shopName: "JBL Official" },
-      { shop: "lazada", price: 2690000, originalPrice: 3190000, url: "https://www.lazada.vn/products/jbl-flip-6.html", shopName: "JBL Store" },
+      { shop: "goodspace", price: 2490000, url: "https://goodspace.art/loa/jbl-flip-6", shopName: "GoodSpace" },
     ],
   },
 
@@ -414,8 +397,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["grey"],
     styleTags: ["minimal", "professional"],
     prices: [
-      { shop: "shopee", price: 1490000, url: "https://shopee.vn/product/anker-usb-c-hub", shopName: "Anker Official" },
-      { shop: "lazada", price: 1390000, originalPrice: 1790000, url: "https://www.lazada.vn/products/anker-hub.html", shopName: "Anker Store" },
+      { shop: "goodspace", price: 1490000, url: "https://goodspace.art/phu-kien/anker-usb-c-hub", shopName: "GoodSpace" },
     ],
   },
   {
@@ -427,7 +409,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["black"],
     styleTags: ["professional", "minimal"],
     prices: [
-      { shop: "shopee", price: 1790000, url: "https://shopee.vn/product/logitech-c920", shopName: "Logitech Official" },
+      { shop: "goodspace", price: 1790000, url: "https://goodspace.art/phu-kien/logitech-c920", shopName: "GoodSpace" },
     ],
   },
   {
@@ -439,7 +421,7 @@ const SEED_COMPONENTS: SeedComponent[] = [
     colors: ["silver", "black"],
     styleTags: ["premium", "minimal"],
     prices: [
-      { shop: "shopee", price: 1990000, url: "https://shopee.vn/product/grovemade-stand", shopName: "Desk Accessories Pro" },
+      { shop: "goodspace", price: 1990000, url: "https://goodspace.art/phu-kien-va-setup/grovemade-stand", shopName: "GoodSpace" },
     ],
   },
 ];

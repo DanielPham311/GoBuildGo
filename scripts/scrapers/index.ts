@@ -1,14 +1,15 @@
 import type { Scraper } from "./types";
-import { firecrawlCrawler } from "./firecrawl";
-import { shopeeScraper } from "./shopee";
+import { goodspaceScraper } from "./goodspace";
+import { apshopScraper } from "./apshop";
 
 /**
- * Scraper registry — Firecrawl is the primary multi-shop crawler.
- * Shopee is kept as a fallback but Firecrawl should handle all shops.
+ * Scraper registry.
+ * - GoodSpace: direct category scraping for chairs, desks, decor (server-rendered)
+ * - APShop: direct category scraping for monitors, keyboards, mice, desks, chairs, audio, decor (server-rendered)
  */
 const scrapers: Map<string, Scraper> = new Map();
-scrapers.set("firecrawl", firecrawlCrawler);
-scrapers.set("shopee", shopeeScraper); // fallback
+scrapers.set("goodspace", goodspaceScraper);
+scrapers.set("apshop", apshopScraper);
 
 export function getScraper(name: string): Scraper | undefined {
   return scrapers.get(name);
@@ -18,4 +19,4 @@ export function getAllScrapers(): Scraper[] {
   return Array.from(scrapers.values());
 }
 
-export { firecrawlCrawler, shopeeScraper };
+export { goodspaceScraper, apshopScraper };

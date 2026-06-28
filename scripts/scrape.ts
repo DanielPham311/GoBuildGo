@@ -19,13 +19,13 @@ import { embedText } from "@/shared/ai";
 import { getCreditsUsed, resetCredits } from "./scrapers/credits";
 
 const VALID_CATEGORIES = ["desk", "chair", "monitor", "keyboard", "mouse", "lighting", "decor", "audio", "accessory"] as const;
-const VALID_SHOPS = ["shopee", "lazada", "tiki", "phongvu", "gearvn", "nhaxinh"] as const;
+const VALID_SHOPS = ["goodspace", "apshop"] as const;
 
 function toCategory(s: string): typeof VALID_CATEGORIES[number] {
   return VALID_CATEGORIES.includes(s as typeof VALID_CATEGORIES[number]) ? s as typeof VALID_CATEGORIES[number] : "accessory";
 }
 function toShop(s: string): typeof VALID_SHOPS[number] {
-  return VALID_SHOPS.includes(s as typeof VALID_SHOPS[number]) ? s as typeof VALID_SHOPS[number] : "shopee";
+  return VALID_SHOPS.includes(s as typeof VALID_SHOPS[number]) ? s as typeof VALID_SHOPS[number] : "goodspace";
 }
 
 const prisma = new PrismaClient();

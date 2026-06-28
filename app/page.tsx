@@ -31,7 +31,7 @@ export default function HomePage() {
 
           {/* Subtext */}
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
-            Plan your layout in 2D, balance your budget in VND, optimize color harmony, and shop the cheapest deals across Shopee, Lazada, and Tiki.
+            Plan your layout in 2D, balance your budget in VND, optimize color harmony, and shop the cheapest deals across Vietnam&apos;s top marketplaces.
           </p>
 
           {/* CTA Buttons */}

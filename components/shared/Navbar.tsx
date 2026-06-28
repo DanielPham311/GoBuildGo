@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
-import { Laptop, Sparkles, LogOut, User as UserIcon, Users, Palette, LayoutDashboard, Monitor } from "lucide-react";
+import { Laptop, Sparkles, LogOut, User as UserIcon, Users, Palette, LayoutDashboard, Monitor, Pen } from "lucide-react";
 
 export default function Navbar() {
   const router = useRouter();
@@ -62,14 +62,12 @@ export default function Navbar() {
                   </span>
                 </Link>
                 <Link href="/planner" className={linkClass("/planner")}>
-                  Planner
-                </Link>
-                <Link href="/dashboard" className={linkClass("/dashboard")}>
                   <span className="flex items-center gap-1.5">
-                    <LayoutDashboard className="h-3.5 w-3.5" />
-                    Dashboard
+                    <Pen className="h-3.5 w-3.5" />
+                    Planner
                   </span>
                 </Link>
+                
                 {isAdmin && (
                   <Link href="/admin" className={linkClass("/admin")}>
                     Admin
