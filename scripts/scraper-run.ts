@@ -2,7 +2,6 @@ import { PrismaClient } from "@prisma/client";
 import { getAllScrapers } from "./scrapers";
 import { cleanProduct } from "./scrapers/clean";
 import { findDuplicate } from "./scrapers/dedup";
-import { SEARCH_QUERIES } from "./scrapers/queries";
 import { slugify } from "@/lib/utils";
 
 const prisma = new PrismaClient();
@@ -116,17 +115,8 @@ async function upsertProduct(product: ReturnType<typeof cleanProduct>): Promise<
 }
 
 async function main() {
-  // Use SEARCH_QUERIES from config (proper Vietnamese keywords + categories)
-  // CLI args override: comma-separated query strings
-  const cliQueries = process.argv[2]
-    ? process.argv[2].split(",").map((s) => s.trim()).filter(Boolean)
-    : null;
-
-  const queries = cliQueries ?? SEARCH_QUERIES.map((q) => q.query);
-  const queryCategoryMap = new Map(SEARCH_QUERIES.map((q) => [q.query, q.category]));
-
   const scrapers = getAllScrapers();
-  console.log(`Running ${scrapers.length} scraper(s) for ${queries.length} queries…`);
+  console.log(`Running ${scrapers.length} scraper(s)…`);
 
   const startedAt = Date.now();
   let totalUpserted = 0;
@@ -140,61 +130,51 @@ async function main() {
     let scraperErrors = 0;
     const scraperStartedAt = Date.now();
 
-    for (const query of queries) {
-      // Pass the limit from SEARCH_QUERIES config, or default 10 for CLI queries
-      const limit = queryCategoryMap.has(query)
-        ? (SEARCH_QUERIES.find((q) => q.query === query)?.limit ?? 10)
-        : 10;
+    try {
+      console.log(`  [${scraper.name}] Scraping all category pages…`);
+      const rawItems = await scraper.search("", 0);
+      console.log(`    Found ${rawItems.length} items total`);
 
-      try {
-        console.log(`  [${scraper.name}] Searching: "${query}"`);
-        const rawItems = await scraper.search(query, limit);
-        console.log(`    Found ${rawItems.length} items`);
+      for (const raw of rawItems) {
+        try {
+          const normalized = scraper.normalize(raw);
+          const cleaned = cleanProduct(normalized);
+          if (!cleaned.name || cleaned.price <= 0) continue;
 
-        for (const raw of rawItems) {
-          try {
-            const normalized = scraper.normalize(raw);
-            const cleaned = cleanProduct(normalized);
-            if (!cleaned.name || cleaned.price <= 0) continue;
+          const existingId = await findDuplicate(cleaned);
 
-            const existingId = await findDuplicate(cleaned);
-
-            if (existingId) {
-              let priceChanged = false;
-              if (cleaned.price > 0) {
-                priceChanged = await prisma.$transaction(async (tx) => {
-                  return upsertPriceWithHistory(tx, existingId, cleaned);
-                });
-              }
-              await prisma.component.update({
-                where: { id: existingId },
-                data: { embeddingStale: true },
+          if (existingId) {
+            let priceChanged = false;
+            if (cleaned.price > 0) {
+              priceChanged = await prisma.$transaction(async (tx) => {
+                return upsertPriceWithHistory(tx, existingId, cleaned);
               });
-              totalSkipped++;
-              scraperSkipped++;
-              if (priceChanged) totalPriceChanges++;
-              continue;
             }
-
-            const { priceChanged } = await upsertProduct(cleaned);
-            totalUpserted++;
-            scraperUpserted++;
+            await prisma.component.update({
+              where: { id: existingId },
+              data: { embeddingStale: true },
+            });
+            totalSkipped++;
+            scraperSkipped++;
             if (priceChanged) totalPriceChanges++;
-          } catch {
-            totalErrors++;
-            scraperErrors++;
+            continue;
           }
-        }
 
-        await new Promise((r) => setTimeout(r, 1500));
-      } catch (err) {
-        console.error(`  [${scraper.name}] Search failed for "${query}": ${err}`);
-        totalErrors++;
-        scraperErrors++;
+          const { priceChanged } = await upsertProduct(cleaned);
+          totalUpserted++;
+          scraperUpserted++;
+          if (priceChanged) totalPriceChanges++;
+        } catch {
+          totalErrors++;
+          scraperErrors++;
+        }
       }
+    } catch (err) {
+      console.error(`  [${scraper.name}] Failed: ${err}`);
+      totalErrors++;
+      scraperErrors++;
     }
 
-    // Write health record
     await prisma.scraperHealth.create({
       data: {
         scraperName: scraper.name,

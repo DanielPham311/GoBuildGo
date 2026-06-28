@@ -14,7 +14,7 @@ export default function WelcomePage() {
   const features = [
     { icon: Ruler, color: "blue", href: "/planner", title: "2D Layout Design", desc: "Set custom room dimensions and position furniture interactively.", cta: "Open Planner" },
     { icon: Palette, color: "purple", href: "/planner", title: "Style &amp; Color Harmony", desc: "Get real-time scores for color consistency and theme matching.", cta: "Start Designing" },
-    { icon: ShoppingBag, color: "amber", href: "/planner", title: "Smart Price Alerts", desc: "Compare prices across Shopee, Lazada, Tiki and more.", cta: "Browse Components" },
+    { icon: ShoppingBag, color: "amber", href: "/planner", title: "Smart Price Alerts", desc: "Compare prices across Vietnam's top marketplaces.", cta: "Browse Components" },
     { icon: Sparkles, color: "emerald", href: "/visualize", title: "AI Room Visualizer", desc: "Generate stunning room images from a text description.", cta: "Try Visualizer" },
     { icon: Users, color: "rose", href: "/community", title: "Community Gallery", desc: "Browse and share setups with fellow enthusiasts.", cta: "Explore Gallery" },
     { icon: Eye, color: "cyan", href: "/community", title: "Style Scoring", desc: "Get objective scores on color harmony and space usage.", cta: "See Examples" },

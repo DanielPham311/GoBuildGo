@@ -9,12 +9,8 @@ interface Props {
 }
 
 const SHOP_COLOR: Record<string, string> = {
-  shopee: "bg-[#FF5722]/10 text-[#FF5722]",
-  lazada: "bg-[#000080]/10 text-[#000080]",
-  tiki: "bg-[#1890FF]/10 text-[#1890FF]",
-  phongvu: "bg-[#0052CC]/10 text-[#0052CC]",
-  gearvn: "bg-[#E60012]/10 text-[#E60012]",
-  nhaxinh: "bg-[#5D4037]/10 text-[#5D4037]",
+  goodspace: "bg-[#10B981]/10 text-[#10B981]",
+  apshop: "bg-[#7C3AED]/10 text-[#7C3AED]",
 };
 
 export function SelectedItems({ onAddClick }: Props) {
@@ -52,7 +48,7 @@ export function SelectedItems({ onAddClick }: Props) {
         <div className="space-y-4 max-h-[380px] overflow-y-auto pr-1">
           {Object.entries(grouped).map(([category, categoryItems]) => (
             <div key={category} className="space-y-2">
-              <h4 className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground capitalize">
+              <h4 className="text-[11px] font-bold tracking-wider text-muted-foreground capitalize">
                 {category.replace("_", " ")}
               </h4>
               <div className="space-y-2">
@@ -88,7 +84,7 @@ export function SelectedItems({ onAddClick }: Props) {
                             {comp.brand}
                           </span>
                           {shop && (
-                            <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold uppercase ${SHOP_COLOR[shop.toLowerCase()] || "bg-muted text-muted-foreground"}`}>
+                            <span className={`rounded-md px-1.5 py-0.5 text-[9px] font-bold ${SHOP_COLOR[shop.toLowerCase()] || "bg-muted text-muted-foreground"}`}>
                               {shop}
                             </span>
                           )}

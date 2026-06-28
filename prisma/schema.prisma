@@ -23,12 +23,8 @@ enum ComponentCategory {
 }
 
 enum Shop {
-  shopee
-  lazada
-  tiki
-  phongvu
-  gearvn
-  nhaxinh
+  goodspace
+  apshop
 }
 
 enum RoomType {

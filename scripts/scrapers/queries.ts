@@ -1,15 +1,11 @@
 /**
- * Search query config for Firecrawl crawler (hybrid mode).
- *
- * Strategy: search-only for Shopee/Lazada/Tiki (scrape blocked),
- * search + scrape fallback for PhongVu/GearVN.
+ * Search query config for Firecrawl crawler.
  *
  * NOTE: Firecrawl's /search does NOT support Google `site:` operators.
- * Queries must be plain Vietnamese product keywords — Firecrawl returns
- * organic results from VN shops (Shopee, Lazada, Tiki, PhongVu, GearVN).
+ * Queries must be plain Vietnamese product keywords.
  *
- * 12 queries × 1 credit/search = ~12 credits/run.
- * Daily schedule: ~360 credits/month (within 1000 free tier).
+ * These queries target items NOT available on GoodSpace:
+ * monitors, keyboards, mice, lighting, audio.
  */
 
 export type SearchQuery = {
@@ -19,40 +15,6 @@ export type SearchQuery = {
 };
 
 export const SEARCH_QUERIES: SearchQuery[] = [
-  // Desks
-  {
-    query: "bàn gaming bàn làm việc giá rẻ",
-    category: "desk",
-    limit: 10,
-  },
-  {
-    query: "bàn máy tính gaming giá rẻ Việt Nam",
-    category: "desk",
-    limit: 10,
-  },
-  {
-    query: "standing desk adjustable giá rẻ",
-    category: "desk",
-    limit: 10,
-  },
-
-  // Chairs
-  {
-    query: "ghế gaming ghế công thái học giá rẻ",
-    category: "chair",
-    limit: 10,
-  },
-  {
-    query: "gaming chair ergonomic Việt Nam",
-    category: "chair",
-    limit: 10,
-  },
-  {
-    query: "ghế xoay văn phòng giá rẻ",
-    category: "chair",
-    limit: 10,
-  },
-
   // Monitors
   {
     query: "màn hình gaming 27 inch giá rẻ",
@@ -61,6 +23,11 @@ export const SEARCH_QUERIES: SearchQuery[] = [
   },
   {
     query: "gaming monitor 144hz Việt Nam",
+    category: "monitor",
+    limit: 10,
+  },
+  {
+    query: "màn hình 2k 27 inch giá rẻ",
     category: "monitor",
     limit: 10,
   },
@@ -86,6 +53,20 @@ export const SEARCH_QUERIES: SearchQuery[] = [
   {
     query: "gaming mouse wireless Việt Nam",
     category: "mouse",
+    limit: 10,
+  },
+
+  // Lighting
+  {
+    query: "đèn led setup gaming rgb",
+    category: "lighting",
+    limit: 10,
+  },
+
+  // Audio
+  {
+    query: "tai nghe gaming giá rẻ",
+    category: "audio",
     limit: 10,
   },
 ];

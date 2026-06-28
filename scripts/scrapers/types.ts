@@ -22,7 +22,7 @@ export type NormalizedProduct = {
 
 export interface Scraper {
   name: string;
-  shop: string; // Shop enum value (e.g. "shopee")
+  shop: string; // Shop enum value (e.g. "goodspace")
   /** Search for products. Returns raw, unnormalized items. */
   search(query: string, limit?: number): Promise<RawProduct[]>;
   /** Normalize a raw item into a canonical shape. */

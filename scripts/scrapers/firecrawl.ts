@@ -12,23 +12,22 @@ import { extractProduct, extractFromSearchResult } from "./extract";
 import { SEARCH_QUERIES } from "./queries";
 
 const SHOP_NAME_MAP: Record<string, string> = {
-  shopee: "Shopee",
-  lazada: "Lazada",
-  tiki: "Tiki",
   phongvu: "Phong Vũ",
   gearvn: "GearVN",
+  goodspace: "GoodSpace",
 };
 
 const SHOP_DOMAINS = [
-  "shopee.vn",
-  "lazada.vn",
-  "tiki.vn",
   "phongvu.com.vn",
   "gearvn.com",
+  "goodspace.art",
+  "apshop.vn",
 ];
 
-/** Sites that block Firecrawl scraping — skip scrape, use search-only */
-const SCRAPE_BLOCKED_DOMAINS = ["shopee.vn", "lazada.vn", "tiki.vn"];
+/** APShop and GoodSpace have their own direct scrapers.
+ *  PhongVu/GearVN block Firecrawl scrape (JS-rendered / blocked).
+ *  Firecrawl search path only used for PhongVu/GearVN search snippets. */
+const SCRAPE_BLOCKED_DOMAINS = ["phongvu.com.vn", "gearvn.com", "apshop.vn", "goodspace.art"];
 
 function isShopUrl(url: string): boolean {
   try {
@@ -39,7 +38,7 @@ function isShopUrl(url: string): boolean {
   }
 }
 
-/** Only PhongVu and GearVN are scrapeable as fallback */
+/** No shops are reliably scrapeable — all search-only for Firecrawl */
 function canScrape(url: string): boolean {
   try {
     const u = new URL(url);

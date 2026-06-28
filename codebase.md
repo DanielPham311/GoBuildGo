@@ -1,10 +1,10 @@
 # gobuildgo Codebase Reference
 
-> Last updated: 2026-06-25 (Firecrawl hybrid scraper: search-only for Shopee/Lazada/Tiki, search+scrape fallback for PhongVu/GearVN. Credit budget guard at 900/1000. Daily cron. ~14 credits/run.)
+> Last updated: 2026-06-28 (Simplified to 2 scrapers: GoodSpace direct + APShop direct. Removed PhongVu/GearVN/NhaXinh/Shopee/Lazada/Tiki. Shop enum = goodspace, apshop.)
 
 ## Project Overview
 
-Vietnam-focused desk setup planner + marketplace. Users plan desk setups by picking room type, theme, and components; prices from Vietnamese e-commerce (Shopee, Lazada, Tiki) with affiliate links. Stack: Next.js 14 (App Router) + TypeScript + Prisma/PostgreSQL (Neon) + pgvector + Voyage embeddings + Pollinations.ai image gen + TailwindCSS.
+Vietnam-focused desk setup planner + marketplace. Users plan desk setups by picking room type, theme, and components; prices from Vietnamese e-commerce (GoodSpace, PhongVu, GearVN, NhaXinh) with affiliate links. Stack: Next.js 14 (App Router) + TypeScript + Prisma/PostgreSQL (Neon) + pgvector + Voyage embeddings + Pollinations.ai image gen + TailwindCSS.
 
 ## Tech Stack
 
@@ -20,7 +20,7 @@ Vietnam-focused desk setup planner + marketplace. Users plan desk setups by pick
 | Styling | TailwindCSS 3.4 + shadcn/ui (planned, not yet added) |
 | State | Zustand 4.5 (persist middleware) |
 | Validation | Zod 3.23 at every API boundary |
-| i18n | next-intl 3.17 (vi/en, cookie-based, no URL prefix) |
+| i18n | ❌ Removed (next-intl caused bugs, reverted to English-only) |
 | Testing | Vitest 2.0 + Playwright 1.45 |
 | Scheduling | Vercel Cron |
 
@@ -85,17 +85,14 @@ gobuildgo/
 │   ├── constants.ts                  # Categories, rooms, shops, pagination
 │   └── utils.ts                      # cn, formatCurrency, slugify
 ├── scripts/
-│   ├── scraper-run.ts                # ✅ CLI runner
-│   └── scrapers/                     # ✅ Shopee + clean + dedup + types
+│   ├── scraper-run.ts                # ✅ CLI runner (GoodSpace + APShop)
+│   ├── scrape.ts                     # ✅ Standalone Firecrawl search runner
+│   └── scrapers/                     # ✅ GoodSpace + APShop + Firecrawl search + clean + dedup + types
 ├── prisma/
 │   ├── schema.prisma                 # 15 models
-│   ├── seed/                         # ✅ 34 components + 6 themes
+│   ├── seed/                         # ✅ 25 components (GoodSpace-only prices) + 6 themes
 │   └── migrations/                   # 1 squashed migration (20260622000000_init)
-├── i18n/
-│   ├── config.ts                     # locales (en, vi), defaultLocale (vi)
-│   ├── en.json                       # English translations
-│   ├── vi.json                       # Vietnamese translations
-│   └── request.ts                    # next-intl getRequestConfig
+├── i18n/                             # ❌ Removed (next-intl uninstalled)
 ├── docs/                             # Design docs (see CLAUDE.md for index)
 ├── middleware.ts                     # Cookie-based locale + API version redirect + auth hint
 ├── next.config.mjs                   # Security headers, image patterns, i18n plugin
@@ -215,19 +212,24 @@ gobuildgo/
 - **service.ts**: `buildAffiliateUrl(url, itemId)`, `parseAffiliatePayload`, `recordClick`, `hashIp`, `getClickStats`
 - **Note**: Two affiliate signing implementations coexist — `modules/affiliate/service.ts` (old, url+itemId) and `modules/prices/affiliate.ts` (new canonical, priceId+componentId+shop). New code should use `modules/prices/affiliate.ts`.
 
-### Scraper Infrastructure ✅ (Firecrawl Hybrid)
+### Scraper Infrastructure ✅ (GoodSpace + APShop direct, Firecrawl search optional)
+- **`scripts/scrapers/goodspace.ts`**: Direct category page scraping — Firecrawl `/scrape` → regex parse. Chairs, desks, decor, accessories.
+- **`scripts/scrapers/apshop.ts`**: Direct category page scraping — Firecrawl `/scrape` → block parsing. 7 categories: ban-ghe, ghe-gaming, man-hinh-pc, ban-phim-co, chuot-gaming, tai-nghe-gaming, phu-kien. Handles Vietnamese price format with `₫` inside `~~` strikethrough.
 - **`scripts/scrapers/firecrawl-api.ts`**: Firecrawl REST client — `firecrawlSearch()` + `firecrawlScrape()`. Tracks credits per call.
 - **`scripts/scrapers/extract.ts`**: `extractProduct()` (full scrape) + `extractFromSearchResult()` (search-only from title+desc).
-- **`scripts/scrapers/firecrawl.ts`**: Hybrid mode — search-only for Shopee/Lazada/Tiki (blocked), search+scrape fallback for PhongVu/GearVN.
-- **`scripts/scrapers/queries.ts`**: 12 queries (1 per shop+category). ~14 credits/run. Daily schedule.
+- **`scripts/scrapers/firecrawl.ts`**: Search + scrape fallback (legacy, used by `scrape.ts`).
+- **`scripts/scrapers/queries.ts`**: 9 queries for Firecrawl search mode.
 - **`scripts/scrapers/credits.ts`**: Credit tracking — search=1 credit, scrape=~5 credits.
-- **`scripts/scrapers/index.ts`**: Registry — `firecrawlCrawler` (primary) + `shopeeScraper` (fallback).
-- **`scripts/scrape.ts`**: Standalone runner. Logs creditsUsed to ScraperHealth.
+- **`scripts/scrapers/index.ts`**: Registry — `goodspaceScraper` + `apshopScraper`.
+- **`scripts/scraper-run.ts`**: CLI runner. Iterates all scrapers, calls `search("", 0)` once each.
+- **`scripts/scrape.ts`**: Standalone Firecrawl search runner (optional, separate path).
+- **`scripts/db-cleanup.ts`**: One-time cleanup — removes prices from removed shops (phongvu, gearvn, nhaxinh, shopee, lazada, tiki) + orphaned components.
 - **`scripts/snapshot.ts`**: Daily price snapshot.
 - **`app/api/v1/cron/scrape/route.ts`**: Budget guard — skips if >900 credits used this month.
-- **Migration**: `20260625_add_credits_used` — adds `creditsUsed` to `scraper_health`.
 - **Cron**: scrape (daily 3AM UTC), snapshot (daily 2AM UTC). Gated by `CRON_SECRET`.
-- **Data flow**: search → extract from result → (if no price + gearvn/phongvu) scrape → clean → dedup → upsert → ScraperHealth
+- **Active shops**: GoodSpace (direct), APShop (direct). Shop enum = `goodspace`, `apshop`.
+- **Removed shops**: PhongVu, GearVN, NhaXinh, Shopee, Lazada, Tiki (all block scraping or unreliable).
+- **Data flow**: Shop category page → Firecrawl `/scrape` → markdown parse → clean → dedup → upsert → ScraperHealth
 
 ### `modules/search/` ✅
 - **service.ts**: `searchComponents(query)` — embed → pgvector cosine → diversify by category → attach offers
@@ -310,15 +312,11 @@ export async function POST(req: NextRequest) {
 | Admin Items | `/admin/items` | ✅ All components, activate/deactivate, delete, search |
 | Admin Reports | `/admin/reports` | ✅ Most-clicked items + per-shop breakdown |
 | Admin Prompts | `/admin/prompts` | ✅ User search/visualize prompt log, filter by type |
-| Navbar | shared | ✅ Sticky, auth-aware, locale switcher (cookie-based) |
+| Navbar | shared | ✅ Sticky, auth-aware |
 
 ## i18n
 
-- Cookie-based (`NEXT_LOCALE`), no URL prefix
-- Default: `vi`, supported: `en`, `vi`
-- Middleware sets locale from `Accept-Language` header on first visit
-- Navbar locale switcher writes cookie directly + `router.refresh()`
-- Translation files: `i18n/en.json`, `i18n/vi.json`
+- ❌ Removed (next-intl 3.17 uninstalled 2026-06-27 — caused routing bugs). English-only.
 
 ## Middleware
 
@@ -372,7 +370,7 @@ GOOGLE_CLIENT_SECRET  # NextAuth Google OAuth
 | F8 | Save/load setups | ✅ Real (full CRUD) |
 | F9 | Public setup gallery | ✅ Real |
 | F10 | Theme gallery page | ✅ Real (PR #14 — `/themes` list + `/themes/[slug]`) |
-| F11 | Vietnamese i18n | ✅ Real |
+| F11 | Vietnamese i18n | ❌ Removed (next-intl caused bugs) |
 | F12 | VND formatting | ✅ Real |
 | F13 | Price history charts | ✅ API (`/prices/history`) + `PriceHistoryChart` component (needs host page) |
 | F14 | Price drop alerts | ❌ Missing |

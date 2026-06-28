@@ -4,11 +4,10 @@
  */
 
 const DOMAIN_TO_SHOP: Record<string, { shop: string; shopName: string }> = {
-  "shopee.vn": { shop: "shopee", shopName: "Shopee Vietnam" },
-  "lazada.vn": { shop: "lazada", shopName: "Lazada Vietnam" },
-  "tiki.vn": { shop: "tiki", shopName: "Tiki" },
   "phongvu.com.vn": { shop: "phongvu", shopName: "Phong Vũ" },
   "gearvn.com": { shop: "gearvn", shopName: "GearVN" },
+  "goodspace.art": { shop: "goodspace", shopName: "GoodSpace" },
+  "apshop.vn": { shop: "apshop", shopName: "APShop" },
 };
 
 export type ExtractedProduct = {
@@ -127,7 +126,7 @@ function extractName(title: string, markdown: string): string {
   // Prefer the page title (from Firecrawl metadata)
   if (title) {
     return title
-      .replace(/\s*[|\-–—]\s*(Shopee|Lazada|Tiki|PhongVu|GearVN|Vietnam|VN).*$/i, "")
+      .replace(/\s*[|\-–—]\s*(PhongVu|GearVN|GoodSpace|Vietnam|VN).*$/i, "")
       .replace(/\s+/g, " ")
       .trim();
   }
@@ -187,13 +186,13 @@ export function extractFromSearchResult(
 
   // Clean product name from title
   const name = title
-    .replace(/\s*[|\-–—]\s*(Shopee|Lazada|Tiki|PhongVu|GearVN|Vietnam|VN|Mua|Giá).*$/i, "")
+    .replace(/\s*[|\-–—]\s*(PhongVu|GearVN|GoodSpace|Vietnam|VN|Mua|Giá).*$/i, "")
     .replace(/\s+/g, " ")
     .trim();
 
   if (!name || name.length < 5) return null;
 
-  // Try to extract price from description first, then title (Tiki often has price in title)
+  // Try to extract price from description first, then title
   let { price, originalPrice } = extractPrices(description);
   if (price === null) {
     const titlePrice = extractPrices(title);
