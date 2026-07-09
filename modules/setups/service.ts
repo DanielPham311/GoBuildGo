@@ -27,7 +27,19 @@ const detailInclude = {
       },
     },
   },
-  _count: { select: { likes: true } },
+  comments: {
+    orderBy: { createdAt: "desc" },
+    take: 10,
+    select: {
+      id: true,
+      body: true,
+      parentId: true,
+      createdAt: true,
+      user: { select: { id: true, name: true, image: true } },
+      _count: { select: { replies: true } },
+    },
+  },
+  _count: { select: { likes: true, comments: true } },
 } satisfies Prisma.SetupInclude;
 
 export type SetupDetail = Prisma.SetupGetPayload<{ include: typeof detailInclude }>;

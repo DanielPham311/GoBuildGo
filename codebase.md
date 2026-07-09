@@ -373,8 +373,8 @@ GOOGLE_CLIENT_SECRET  # NextAuth Google OAuth
 | F11 | Vietnamese i18n | ❌ Removed (next-intl caused bugs) |
 | F12 | VND formatting | ✅ Real |
 | F13 | Price history charts | ✅ API (`/prices/history`) + `PriceHistoryChart` component (needs host page) |
-| F14 | Price drop alerts | ❌ Missing |
-| F15 | Community comments | ❌ Missing |
+| F14 | Price drop alerts | ✅ In progress — alerts module + cron endpoint |
+| F15 | Community comments | ✅ In progress — Comment model + API routes |
 | F16 | User profiles + dashboard | ✅ Real (PR #14 — `/dashboard` + profile/favorites/settings) |
 | F17 | AI room photo analysis | ❌ Missing |
 | F18 | SEO blog | ❌ Missing |
@@ -392,8 +392,8 @@ GOOGLE_CLIENT_SECRET  # NextAuth Google OAuth
 
 | ID | Feature | What's needed | Difficulty |
 |---|---|---|---|
-| **F14** | Price drop alerts | Cron job: query PriceHistory for drops → match EmailSubscription (price_alert) → send email (Resend). | Medium |
-| **F15** | Community comments | New `Comment` model (setupId, userId, body, parentId). API CRUD + nested UI on setup detail. | Medium |
+| **F14** | Price drop alerts | Add `RESEND_API_KEY` env var, test alerts, add UI for email settings | Medium |
+| **F15** | Community comments | Add comment UI to setup detail page, test nested replies | Medium |
 
 ### P2 — Medium Priority
 
