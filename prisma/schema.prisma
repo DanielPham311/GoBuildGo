@@ -74,6 +74,7 @@ model User {
   setupViews      SetupView[]
   subscriptions   EmailSubscription[]
   promptLogs      PromptLog[]
+  comments        Comment[]
 
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
@@ -172,6 +173,7 @@ model Setup {
   affiliateClicks AffiliateClick[]
   likes           SetupLike[]
   views           SetupView[]
+  comments        Comment[]
 
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -314,6 +316,24 @@ model SetupView {
 
   @@index([setupId, viewedAt(sort: Desc)])
   @@map("setup_views")
+}
+
+model Comment {
+  id          String   @id @default(cuid())
+  setupId     String
+  setup       Setup    @relation(fields: [setupId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  body        String   @db.Text
+  parentId    String?  // For nested replies
+  parent      Comment? @relation("CommentReplies", fields: [parentId], references: [id])
+  replies     Comment[] @relation("CommentReplies")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([setupId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("comments")
 }
 
 model ScraperHealth {
